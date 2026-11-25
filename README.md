@@ -4,9 +4,16 @@
 > диагностика → вариации URL/UA → прокси → Wayback Machine; поиск через
 > lite.duckduckgo. Для любого проекта и агента.
 
-Структура — как у `cbr-core` / `google-analytics-core`: корневой `SKILL.md`,
-скрипты в `scripts/`, справка маршрутов в `references/`. PHP 8.4+, ext-curl,
-без composer-зависимостей — как `Ga4Client.php` в google-analytics-core.
+Структура — как у `cbr-core` / `google-analytics-core`: корневой `SKILL.md`
+(навык: как пользоваться), скрипты в `scripts/`, справка маршрутов в
+`references/`. PHP 8.4+, ext-curl, без composer-зависимостей — как
+`Ga4Client.php` в google-analytics-core.
+
+Общий клиент — `WrfClient.php` в корне: `loadProxy` (--proxy → env → конфиг),
+`ensureConfigIgnored` (проверка/пополнение .gitignore репо, где лежит конфиг;
+приём из `Ga4Client.php`), `fetch` через ext-curl (прокси любой схемы),
+`isChallenge`, `urlVariants`, `waybackSnapshot`, `ddgLite`, `argv`/`emit`.
+Скрипты `scripts/fetch.php` и `scripts/search.php` — тонкие CLI над клиентом.
 
 ## Установка
 
