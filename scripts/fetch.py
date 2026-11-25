@@ -40,6 +40,7 @@ def main():
     ap.add_argument('--timeout', type=int, default=20)
     ap.add_argument('--no-wayback', action='store_true')
     args = ap.parse_args()
+    C.ensure_config_ignored()
     proxy = C.load_proxy(args.proxy)
     attempts = []
     result = None

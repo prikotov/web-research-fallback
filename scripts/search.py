@@ -42,6 +42,7 @@ def main():
     ap.add_argument('--limit', type=int, default=10)
     ap.add_argument('--proxy')
     args = ap.parse_args()
+    C.ensure_config_ignored()
     proxy = C.load_proxy(args.proxy)
     res, st, note = ddg_lite(args.query, None, args.limit)
     route = 'direct'

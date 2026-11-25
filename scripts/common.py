@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import urllib.request
 
 UA_DEFAULT = 'Mozilla/5.0 (research; web-research-fallback)'
@@ -22,6 +23,44 @@ def config_path():
     """Свой конфиг скилла: wrf_config.json в корне репо (или путь из WRF_CONFIG)."""
     return os.environ.get('WRF_CONFIG') or os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), CONFIG_NAME)
+
+
+def ensure_config_ignored(path=None):
+    """Конфиг с секретом должен быть в .gitignore того репо/каталога, где лежит.
+
+    Как в Ga4Client.php (google-analytics-core): если каталог конфига внутри
+    git-репо — проверяем git check-ignore и пополняем корневой .gitignore;
+    если репо нет — гарантируем .gitignore в каталоге конфига. Пишем только
+    имя файла, не значение; уведомление — в stderr.
+    """
+    p = os.path.realpath(path or config_path())
+    directory = os.path.dirname(p)
+    entry = os.path.basename(p)
+    top = None
+    r = subprocess.run(['git', '-C', directory, 'rev-parse', '--show-toplevel'],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        top = r.stdout.strip()
+    if top:
+        rel = os.path.relpath(p, top)
+        chk = subprocess.run(['git', '-C', top, 'check-ignore', '-q', '--', rel],
+                             capture_output=True)
+        if chk.returncode == 0:
+            return True
+        gi = os.path.join(top, '.gitignore')
+    else:
+        gi = os.path.join(directory, '.gitignore')
+    lines = []
+    if os.path.exists(gi):
+        lines = [l.strip() for l in open(gi, encoding='utf-8', errors='replace')]
+    if entry in lines:
+        return True
+    with open(gi, 'a', encoding='utf-8') as f:
+        if lines and lines[-1] != '':
+            f.write('\n')
+        f.write(entry + '\n')
+    print(f'⚠️  .gitignore пополнен записью {entry}: {gi}', file=sys.stderr)
+    return False
 
 
 def load_proxy(explicit=None):
