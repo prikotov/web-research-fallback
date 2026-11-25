@@ -9,18 +9,20 @@ license: MIT
 Переносимый скилл+скрипты для доступа к недоступным источникам. Репо
 клонируется/симлинкуется в каталог skills любого агента; секретов в репо нет —
 прокси берётся в рантайме из собственного конфига скилла или из окружения.
+Требования: PHP 8.4+ с ext-curl, без composer-зависимостей. Общий клиент —
+`WrfClient.php` в корне (как `Ga4Client.php`).
 
 ## Скрипты
 
 ```bash
-python3 scripts/fetch.py URL [--out FILE] [--proxy URL] [--no-wayback]
-python3 scripts/search.py "запрос" [--limit 10]
+php scripts/fetch.php URL [--out FILE] [--proxy URL] [--no-wayback]
+php scripts/search.php "запрос" [--limit 10]
 ```
 
-- `fetch.py` — цепочка: direct → вариации (UA/схема/www) → прокси → Wayback
+- `fetch.php` — цепочка: direct → вариации (UA/схема/www) → прокси → Wayback
   (available API → снапшот; при 429 снапшот через прокси). JSON-отчёт:
   маршрут, статус, байты, путь тела, список попыток. Код выхода 0/1.
-- `search.py` — lite.duckduckgo.com/lite/ POST `q=` (direct → прокси);
+- `search.php` — lite.duckduckgo.com/lite/ POST `q=` (direct → прокси);
   JSON-список {title, url, snippet}.
 - Прокси: `--proxy` → env `WEB_RESEARCH_PROXY` → собственный конфиг скилла
   `.wrf_config.json` в корне репо (или путь из `WRF_CONFIG`; пример —
@@ -61,7 +63,7 @@ JS-challenge («Just a moment», «Client Challenge»). Не делай выво
   закрыт `.gitignore` того репо/каталога, где он лежит (git check-ignore; как
   ensureGitignore в Ga4Client.php). Не закрыт — пополняет .gitignore именем
   файла и предупреждает в stderr; значение секрета не выводится.
-- Временные файлы — в `/tmp` (fetch.py по умолчанию), не мусорить в проекте.
+- Временные файлы — в `/tmp` (fetch.php по умолчанию), не мусорить в проекте.
 - Не обходить платные подписки и авторизацию; Wayback — публичный архив.
 - Уважать rate limit: паузы, не долбить 429.
 

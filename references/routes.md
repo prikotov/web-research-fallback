@@ -27,5 +27,5 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 - 403 — блокировка/гео/WAF; прокси (exit IP), затем Wayback.
 - 429 — rate limit: пауза; прокси меняет IP; Wayback для архивных копий.
 - 502 через прокси — прокси не достучался до origin; http-вариант, другой маршрут.
-- JS-challenge — тело содержит «Just a moment»/«Client Challenge»; fetch.py
+- JS-challenge — тело содержит «Just a moment»/«Client Challenge»; fetch.php
   считает такой 200 неуспехом и продолжает цепочку.

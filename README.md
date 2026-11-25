@@ -5,7 +5,8 @@
 > lite.duckduckgo. Для любого проекта и агента.
 
 Структура — как у `cbr-core` / `google-analytics-core`: корневой `SKILL.md`,
-скрипты в `scripts/`, справка маршрутов в `references/`. Только Python stdlib.
+скрипты в `scripts/`, справка маршрутов в `references/`. PHP 8.4+, ext-curl,
+без composer-зависимостей — как `Ga4Client.php` в google-analytics-core.
 
 ## Установка
 
@@ -29,7 +30,7 @@ chmod 600 .wrf_config.json                    # затем заполнить п
 Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не читает.
 В коммитах секретов нет и быть не должно.
 
-При каждом запуске `fetch.py`/`search.py` проверяют, что конфиг закрыт
+При каждом запуске `fetch.php`/`search.php` проверяют, что конфиг закрыт
 `.gitignore` того репо/каталога, где он лежит (включая случай, когда скилл
 скопирован внутрь чужого репо): не закрыт — запись добавляется автоматически,
 в stderr — предупреждение. Приём из `Ga4Client.php` (google-analytics-core).
@@ -37,14 +38,14 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
 ## Использование
 
 ```bash
-python3 scripts/fetch.py https://example.com/article --out /tmp/a.html
+php scripts/fetch.php https://example.com/article --out /tmp/a.html
 # {"ok": true, "route": "proxy", "status": 200, "bytes": …, "attempts": […]}
-python3 scripts/search.py "moex retail investors share 2021" --limit 8
+php scripts/search.php "moex retail investors share 2021" --limit 8
 ```
 
-`fetch.py` сам проходит цепочку и печатает JSON-отчёт с маршрутами попыток
+`fetch.php` сам проходит цепочку и печатает JSON-отчёт с маршрутами попыток
 (без секретов); тело сохраняет в `--out` или `/tmp/wrf_<hash>.html`.
-`search.py` — JSON-список результатов ddg lite.
+`search.php` — JSON-список результатов ddg lite.
 
 ## Правила
 

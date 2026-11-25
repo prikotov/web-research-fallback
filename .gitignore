@@ -4,8 +4,6 @@
 *.token.json
 
 # Python
-__pycache__/
-*.pyc
 
 # IDE
 .vscode/
