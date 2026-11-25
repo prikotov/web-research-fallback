@@ -9,7 +9,8 @@ declare(strict_types=1);
  *
  * JSON {query, engine, method, status, note, results:[{title,url,snippet}]}.
  * auto: bing (mkt=ru-RU) → ddg; каждый движок direct → прокси.
- * google/yandex/mail.ru не используем: JS-оболочка или captcha (проверено 2026-11-25).
+ * google/yandex/mail.ru не используем: enablejs / captcha / оболочка авторизации;
+ * эмуляция Chrome не помогает (проверено 2026-11-25, см. references/methods.md).
  */
 require_once dirname(__DIR__) . '/WrfClient.php';
 

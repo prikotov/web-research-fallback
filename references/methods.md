@@ -29,9 +29,9 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 | lite.duckduckgo.com/lite/ POST q= | 200, релевантно (cbr/moex/finam) | да, движок ddg |
 | bing.com/search с mkt=ru-RU&setlang=ru | 200, релевантно, серверный HTML | да, движок bing |
 | bing.com/search без mkt | 200, но словари «доля» | нет: рынок по умолчанию en |
-| google.com/search | 200, страница «enablejs» | нет: результаты только через JS |
-| ya.ru / yandex.ru/search | SmartCaptcha | нет: captcha боту, обход запрещён |
-| go.mail.ru/search | 200, JS-оболочка 1.8 КБ | нет: результатов в HTML нет |
+| google.com/search | 200, страница «enablejs»; Chrome рендерит результаты, но реальные URL в шифрованных /goto-токенах (gbv=1 не помогает) | нет: URL источников не извлечь |
+| ya.ru / yandex.ru/search | SmartCaptcha даже через headless Chrome | нет: captcha боту, обход запрещён |
+| go.mail.ru/search | 200, JS-оболочка 1.8 КБ; через Chrome — оболочка авторизации | нет: результатов нет |
 
 ## Feed-экспорты (проверено 2026-11-25; карта — WrfClient::FEEDS, опыт news-core)
 
@@ -52,7 +52,12 @@ datacenter-IP, настроение WAF); feed-способ — запасной
 | Сайт | curl/browser-UA | headless Chrome | Примечание |
 |---|---|---|---|
 | tass.ru/search | 200, оболочка servicepipe (js-challenge-loader, 1.8–2.4 КБ) | 200, ~590 КБ с результатами | UA chrome = Linux/146 (как в news-web); Win/126 → снова оболочка |
-| google.com/search | 200, страница enablejs | не проверен | результаты только через JS |
+| google.com/search | 200, страница enablejs | 200, 1.4–2.7 МБ DOM с результатами, но URL в /goto-токенах | не пригоден для поиска: ссылки не извлечь |
+| ya.ru / yandex.ru/search | SmartCaptcha | SmartCaptcha («Вы не робот?») | эмуляция не помогает |
+| go.mail.ru/search | JS-оболочка | оболочка авторизации | эмуляция не помогает |
+
+Вывод: эмуляция Chrome открывает контент-сайты (TASS), но не поисковики:
+google прячет URL, yandex требует captcha, mail — авторизацию.
 
 Chrome-способ включается автоматически при пометках challenge/js-shell в attempts;
 `--no-chrome` отключает. Авторизованный прокси chrome не поддерживает.

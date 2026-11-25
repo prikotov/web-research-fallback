@@ -93,7 +93,8 @@ php scripts/fetch.php https://www.youtube.com/
 Ищет URL источников по теме, когда адрес неизвестен или нужно набрать
 материалов. Движки: Bing (рынок ru-RU) и lite.duckduckgo.com (POST `q=`);
 порядок auto: bing → ddg, каждый движок direct → прокси.
-google/yandex/mail.ru не используем: JS-оболочка или captcha (проверено 2026-11-25).
+google/yandex/mail.ru не используем: enablejs, captcha и оболочка авторизации;
+эмуляция Chrome не помогает — google прячет URL в /goto-токены (проверено 2026-11-25).
 
 #### Запуск
 
