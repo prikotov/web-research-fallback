@@ -180,8 +180,7 @@ final class WrfClient
         return is_array($snap) && !empty($snap['available']) ? (string)$snap['url'] : null;
     }
 
-    /** Поиск через lite.duckduckgo.com/lite/ (POST q=). @return array{results:?array,status:int,note:string} */
-    public static function ddgLite(string $query, ?string $proxy = null, int $limit = 10): array
+    /** Поиск через lite.duckduckgo.com/lite/ (POST q=). @return array{results:?array,status:int,note:string} */    public static function ddgLite(string $query, ?string $proxy = null, int $limit = 10): array
     {
         $r = self::fetch('https://lite.duckduckgo.com/lite/', $proxy, self::UA, 20, http_build_query(['q' => $query]));
         if ($r['status'] !== 200 || $r['body'] === '') {
@@ -204,6 +203,43 @@ final class WrfClient
             }
         }
         return ['results' => array_slice($out, 0, $limit), 'status' => 200, 'note' => ''];
+    }
+
+    /** Поиск Bing: серверный HTML, рынок ru-RU обязателен (без него словари).
+     *  URL органики лежит в редиректе /ck/a?…u=a1<base64url>. */
+    public static function bingSearch(string $query, ?string $proxy = null, int $limit = 10): array
+    {
+        $url = 'https://www.bing.com/search?q=' . rawurlencode($query) . '&mkt=ru-RU&setlang=ru';
+        $r = self::fetch($url, $proxy, self::UA_BROWSER, 25);
+        if ($r['status'] !== 200 || $r['body'] === '') {
+            return ['results' => null, 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $out = [];
+        preg_match_all('~<li class="b_algo".*?</li>~s', $r['body'], $bm, PREG_SET_ORDER);
+        foreach ($bm as $b0) {
+            $b = $b0[0];
+            if (!preg_match('~<h2[^>]*>.*?<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>~s', $b, $m)) {
+                continue;
+            }
+            $href = html_entity_decode($m[1], ENT_QUOTES);
+            $target = $href;
+            if (preg_match('/[?&]u=a1([^&"]+)/', $href, $u)) {
+                $dec = base64_decode(strtr($u[1], '-_', '+/'));
+                if ($dec !== false && str_starts_with($dec, 'http')) {
+                    $target = $dec;
+                }
+            }
+            $title = trim(preg_replace('/\s+/', ' ', strip_tags($m[2])));
+            $snippet = '';
+            if (preg_match('~<p[^>]*>(.*?)</p>~s', $b, $p)) {
+                $snippet = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($p[1]))), 0, 300);
+            }
+            $out[] = ['title' => $title, 'url' => $target, 'snippet' => $snippet];
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+        return ['results' => $out ?: null, 'status' => 200, 'note' => ''];
     }
 
     /** JSON-отчёт в stdout (без секретов). */

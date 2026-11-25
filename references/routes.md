@@ -22,6 +22,17 @@
 зафиксированы в карточке источника (ai-trading-sources,
 sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 
+## Поисковые движки (проверено 2026-11-25, запрос «доля физических лиц объем торгов акциями»)
+
+| Движок | Результат | Пригодность |
+|---|---|---|
+| lite.duckduckgo.com/lite/ POST q= | 200, релевантно (cbr/moex/finam) | да, движок ddg |
+| bing.com/search с mkt=ru-RU&setlang=ru | 200, релевантно, серверный HTML | да, движок bing |
+| bing.com/search без mkt | 200, но словари «доля» | нет: рынок по умолчанию en |
+| google.com/search | 200, страница «enablejs» | нет: результаты только через JS |
+| ya.ru / yandex.ru/search | SmartCaptcha | нет: captcha боту, обход запрещён |
+| go.mail.ru/search | 200, JS-оболочка 1.8 КБ | нет: результатов в HTML нет |
+
 ## Диагностика кодов
 
 - 000 / connect timeout — сеть или блокировка маршрута; пробовать прокси.
