@@ -194,7 +194,6 @@ chmod 600 .wrf_config.json
    и tavily extract (`api.tavily.com/extract`, ключ в конфиге).
    Включается при challenge/js-shell/empty body,
    если chrome не помог или отключён.
-   Работает без ключа; из РФ direct = 451, только прокси.
 7. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
    (обычно direct) → снапшот direct → при 429 снапшот через прокси.
    Пагинация и `?singlepage=1` — внутри снапшота.
