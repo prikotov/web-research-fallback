@@ -69,7 +69,7 @@ ln -s /path/to/web-research-fallback /path/to/shared/skills/web-research-fallbac
 
 ## Использование
 
-### Напрямую через PHP
+### fetch.php — загрузка содержимого
 
 ```bash
 # Проверить закрытую статью: скрипт сам переберёт способы, тело — в /tmp
@@ -86,7 +86,23 @@ php scripts/fetch.php https://example.com/ --no-wayback
 
 # Сайт вне карты FEEDS: явная лента для шага feed
 php scripts/fetch.php https://example.com/article --feed https://example.com/rss.xml
+```
 
+#### Параметры fetch.php
+
+| Опция | Описание | По умолчанию |
+|-------|----------|--------------|
+| `URL` | Позиционный, обязательный: что проверяем | — |
+| `--out` | Куда сохранить тело | `/tmp/wrf_<hash>.html` |
+| `--timeout` | Секунд на попытку | 20 (вариации URL — 12) |
+| `--no-wayback` | Не ходить в Wayback | выключено |
+| `--feed` | Явная RSS/Atom-лента для шага feed | из карты FEEDS по хосту |
+| `--no-chrome` | Не ходить в headless Chrome | выключено |
+| `--proxy` | Прокси явно, поверх env и конфига | из env/конфига |
+
+### search.php — поиск источников
+
+```bash
 # Найти источники по теме
 php scripts/search.php "moex retail investors share 2021"
 
@@ -102,20 +118,14 @@ google/yandex/mail.ru не используем: enablejs, captcha и оболо
 эмуляция Chrome не помогает — google прячет URL в /goto-токены
 (проверено 2026-11-25, таблицы — `references/methods.md`).
 
-### Параметры
+#### Параметры search.php
 
-| Опция | Скрипт | Описание | По умолчанию |
-|-------|--------|----------|--------------|
-| `URL` | fetch | Позиционный, обязательный: что проверяем | — |
-| `--out` | fetch | Куда сохранить тело | `/tmp/wrf_<hash>.html` |
-| `--timeout` | fetch | Секунд на попытку | 20 (вариации URL — 12) |
-| `--no-wayback` | fetch | Не ходить в Wayback | выключено |
-| `--feed` | fetch | Явная RSS/Atom-лента для шага feed | из карты FEEDS по хосту |
-| `--no-chrome` | fetch | Не ходить в headless Chrome | выключено |
-| `--proxy` | оба | Прокси явно, поверх env и конфига | из env/конфига |
-| `"запрос"` | search | Позиционный, обязательный: формулировка как для поисковика | — |
-| `--limit` | search | Сколько результатов вернуть | 10 |
-| `--engine` | search | Движок: auto (tavily → brave → jina → bing → ddg), tavily, brave, jina, bing, ddg | auto |
+| Опция | Описание | По умолчанию |
+|-------|----------|--------------|
+| `"запрос"` | Позиционный, обязательный: формулировка как для поисковика | — |
+| `--limit` | Сколько результатов вернуть | 10 |
+| `--engine` | Движок: auto (tavily → brave → jina → bing → ddg), tavily, brave, jina, bing, ddg | auto |
+| `--proxy` | Прокси явно, поверх env и конфига | из env/конфига |
 
 ### Через агента
 
