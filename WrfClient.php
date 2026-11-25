@@ -342,6 +342,39 @@ final class WrfClient
         return ['results' => $out ?: null, 'status' => 200, 'note' => ''];
     }
 
+    /** Tavily extract: тело страницы через их рендер; нужен ключ, из РФ — прокси. */
+    public static function tavilyExtract(string $url, ?string $proxy = null): ?array
+    {
+        $key = self::configKey('tavily_api_key');
+        if ($key === null) {
+            return null;
+        }
+        $ch = curl_init('https://api.tavily.com/extract');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 40,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode(['urls' => [$url]]),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+            CURLOPT_USERAGENT => self::UA,
+        ]);
+        if ($proxy !== null) {
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+        $body = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+        if ($status !== 200 || !is_string($body)) {
+            return null;
+        }
+        $data = json_decode($body, true);
+        $raw = $data['results'][0]['raw_content'] ?? null;
+        if (!is_string($raw) || strlen($raw) < 500) {
+            return null;
+        }
+        return ['body' => $raw, 'status' => 200];
+    }
+
     /** Jina r.jina.ai: reader, рендерит JS и отдаёт markdown; из РФ только прокси. */
     public static function jinaReader(string $url, ?string $proxy = null): array
     {

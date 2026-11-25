@@ -57,6 +57,8 @@ item топ-30 лент и дублируют chrome.
 | Сервис | Результат | Вердикт |
 |---|---|---|
 | r.jina.ai/<url> (через прокси) | finam: 200, 36 КБ markdown с текстом статьи | в цепочке (шаг jina) |
+| api.tavily.com/extract (ключ) | 401 без ключа — эндпоинт существует; с ключом не проверен (ключа нет) | в цепочке (шаг tavily), ждёт ключ |
+| brave search API | только поиск, тела страниц не отдаёт | только search.php |
 | markdown.new/<url> (Cloudflare) | 200, но markdown пустой на сайтах с WAF | не пригоден |
 | api.allorigins.win/raw?url= | 522 | не пригоден |
 | textise.net/showText.aspx | 403 | не пригоден |

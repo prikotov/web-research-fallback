@@ -69,7 +69,7 @@ php scripts/fetch.php https://www.finam.ru/publications/item/dolya-fizlits-v-bir
 | Поле | Описание |
 |------|----------|
 | `ok` | Получено ли тело (200 без JS-challenge) |
-| `method` | Каким способом взято: direct / direct-browser / proxy / chrome / wayback и их вариации |
+| `method` | Каким способом взято: direct / direct-browser / proxy / chrome / jina / tavily / wayback и их вариации |
 | `status`, `bytes` | HTTP-статус и размер тела |
 | `out` | Путь к сохранённому телу |
 | `final_url` | Итоговый адрес после редиректов (для цитирования) |
@@ -79,6 +79,7 @@ php scripts/fetch.php https://www.finam.ru/publications/item/dolya-fizlits-v-bir
 
 - Код выхода: 0 — тело получено, 1 — все способы мимо.
 - `method=chrome` / `method=jina`: тело получено рендером (браузер или reader);
+- `method=tavily`: тело — raw_content из tavily extract (нужен ключ в конфиге).
   у jina тело — markdown, разбирать как markdown, не как HTML.
 - `ok=false` не значит «источника нет»: смотри `attempts` (где сломалось) и
   пробуй другие способы/архивы. Цепочку способов скрипт проходит сам;
@@ -130,7 +131,7 @@ stdout — JSON:
 |------|----------|
 | `results[]` | Список: `title` (заголовок), `url` (адрес), `snippet` (сниппет выдачи) |
 | `engine` | Каким движком найдено: bing или ddg |
-| `method` | bing / ddg / bing-proxy / ddg-proxy |
+| `method` | tavily / brave / jina / bing / ddg и их -proxy-вариации |
 | `status`, `note` | HTTP-статус и пометка ошибки |
 
 Сниппет — только для выбора URL, информацию из него не брать.

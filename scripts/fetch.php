@@ -103,6 +103,22 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
             }
         }
     }
+    // Tavily extract (ключ в конфиге): тело через их рендер
+    if ($result === null && in_array($attempts[count($attempts) - 1]['note'] ?? '', ['challenge', 'js-shell', 'empty body'], true)) {
+        $pvs = $proxy !== null ? [$proxy] : [null];
+        foreach ($pvs as $pv) {
+            $tv = WrfClient::tavilyExtract($url, $pv);
+            if ($tv !== null) {
+                $attempts[] = ['method' => 'tavily', 'status' => 200, 'note' => ''];
+                $result = ['method' => 'tavily', 'status' => 200, 'bytes' => strlen($tv['body']), 'body' => $tv['body'], 'url' => $url];
+                break;
+            }
+        }
+        if ($result === null && WrfClient::configKey('tavily_api_key') !== null) {
+            $attempts[] = ['method' => 'tavily', 'status' => 0, 'note' => 'extract failed'];
+        }
+    }
+
     if ($result === null && !isset($opt['no-wayback'])) {
         $snap = WrfClient::waybackSnapshot($url);
         if ($snap !== null) {

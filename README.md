@@ -190,10 +190,9 @@ chmod 600 .wrf_config.json
    UA chrome обязан совпадать с платформой/версией реального браузера
    (Win/126 против Linux/146 — challenge фингерпринтит несоответствие).
    Авторизованный прокси chrome не умеет — chrome-proxy не пробуем.
-6. **reader-сервисы** (рендерят JS и отдают markdown/text). Проверены:
-   jina reader (`r.jina.ai` через прокси) — работает, в цепочке;
-   markdown.new (Cloudflare) — пустой markdown на сайтах с WAF;
-   allorigins — 522; textise — 403. Включается при challenge/js-shell/empty body,
+6. **Сервисы, отдающие тело**: jina reader (`r.jina.ai` через прокси, без ключа)
+   и tavily extract (`api.tavily.com/extract`, ключ в конфиге). Brave тела не отдаёт —
+   только поиск в search.php. Включается при challenge/js-shell/empty body,
    если chrome не помог или отключён.
    Работает без ключа; из РФ direct = 451, только прокси.
 7. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
