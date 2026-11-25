@@ -52,6 +52,15 @@ google прячет URL, yandex требует captcha, mail — авториз�
 Feed-экспорты (RSS/Atom) проверены как способ и удалены: покрывают только свежие
 item топ-30 лент и дублируют chrome.
 
+## Reader-сервисы (проверено 2026-11-25)
+
+| Сервис | Результат | Вердикт |
+|---|---|---|
+| r.jina.ai/<url> (через прокси) | finam: 200, 36 КБ markdown с текстом статьи | в цепочке (шаг jina) |
+| markdown.new/<url> (Cloudflare) | 200, но markdown пустой на сайтах с WAF | не пригоден |
+| api.allorigins.win/raw?url= | 522 | не пригоден |
+| textise.net/showText.aspx | 403 | не пригоден |
+
 Chrome-способ включается автоматически при пометках challenge/js-shell в attempts;
 `--no-chrome` отключает. Авторизованный прокси chrome не поддерживает.
 
