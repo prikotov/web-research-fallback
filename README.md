@@ -77,6 +77,9 @@ ln -s /path/to/web-research-fallback /path/to/shared/skills/web-research-fallbac
 
 ## Использование
 
+Команды ниже — из корня репо скилла. Из корня рабочего проекта после установки
+путь к скриптам будет `.agents/skills/web-research-fallback/scripts/`.
+
 ### fetch.php — загрузка содержимого
 
 ```bash
@@ -157,6 +160,9 @@ google/yandex/mail.ru не используем: enablejs, captcha и оболо
 ```
 
 ## Конфиг и секреты
+
+> ⚠️ `.wrf_config.json` — в `.gitignore`, никогда не коммитить; права 600.
+> Секреты не выводить в stdout, логи и отчёты.
 
 ```bash
 cp .wrf_config.example.json .wrf_config.json   # в корне репо
@@ -244,6 +250,10 @@ chmod 600 .wrf_config.json
 - Прямые коммиты в `main` запрещены (branch protection): изменения — через ветку и pull request.
 
 Подробнее — [SKILL.md](SKILL.md), способы и кейсы — [references/methods.md](references/methods.md).
+
+## Лицензия
+
+MIT
 
 ---
 
