@@ -37,16 +37,17 @@ def main():
     ap.add_argument('url')
     ap.add_argument('--out')
     ap.add_argument('--proxy')
-    ap.add_argument('--timeout', type=int, default=45)
+    ap.add_argument('--timeout', type=int, default=20)
     ap.add_argument('--no-wayback', action='store_true')
     args = ap.parse_args()
     proxy = C.load_proxy(args.proxy)
     attempts = []
     result = None
 
-    def try_route(route, url, use_proxy=False, ua=C.UA_DEFAULT):
+    def try_route(route, url, use_proxy=False, ua=C.UA_DEFAULT, timeout=None):
         nonlocal result
-        body, st, note = C.fetch(url, proxy=proxy if use_proxy else None, ua=ua, timeout=args.timeout)
+        body, st, note = C.fetch(url, proxy=proxy if use_proxy else None, ua=ua,
+                                 timeout=timeout or args.timeout)
         challenge = C.is_challenge(body)
         attempts.append({'route': route, 'status': st, 'note': ('challenge' if challenge else note)})
         if st == 200 and body and not challenge and result is None:
@@ -57,12 +58,12 @@ def main():
         pass
     else:
         for i, v in enumerate(C.url_variants(args.url)):
-            if try_route(f'direct-variant-{i+1}', v, ua=C.UA_BROWSER):
+            if try_route(f'direct-variant-{i+1}', v, ua=C.UA_BROWSER, timeout=min(12, args.timeout)):
                 break
         if result is None and proxy:
             if not try_route('proxy', args.url, use_proxy=True):
                 for i, v in enumerate(C.url_variants(args.url)):
-                    if try_route(f'proxy-variant-{i+1}', v, use_proxy=True, ua=C.UA_BROWSER):
+                    if try_route(f'proxy-variant-{i+1}', v, use_proxy=True, ua=C.UA_BROWSER, timeout=min(12, args.timeout)):
                         break
         if result is None and not args.no_wayback:
             snap = wayback_snapshot(args.url)

@@ -17,12 +17,17 @@ ln -s /home/dp/MyProjects/web-research-fallback .agents/skills/web-research-fall
 ln -s /home/dp/MyProjects/web-research-fallback /home/dp/MyProjects/.ai_sync/.agents/skills/web-research-fallback
 ```
 
-## Настройка прокси (в проекте-потребителе, не здесь)
+## Настройка прокси (собственный конфиг скилла)
 
-Прокси-строка кладётся в локальный env-файл проекта (`.env.dev.local`,
-`.env.local` или `.env`; ключ `WEB_RESEARCH_PROXY` или `YT_DLP_PROXY`), файл —
-в `.gitignore` проекта, права 600. Либо переменная окружения, либо `--proxy`.
-В этом репо секретов нет и не должно быть.
+```bash
+cp wrf_config.example.json wrf_config.json   # в корне репо
+chmod 600 wrf_config.json                    # затем заполнить поле "proxy"
+```
+
+`wrf_config.json` — в `.gitignore` этого репо. Порядок разрешения:
+`--proxy` → env `WEB_RESEARCH_PROXY` → `wrf_config.json` (или путь из `WRF_CONFIG`).
+Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не читает.
+В коммитах секретов нет и быть не должно.
 
 ## Использование
 

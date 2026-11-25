@@ -3,6 +3,7 @@
 Секреты не выводятся: load_proxy возвращает значение только в память,
 все отчёты содержат лишь имена маршрутов (direct/proxy/wayback).
 """
+import json
 import os
 import re
 import subprocess
@@ -11,30 +12,35 @@ import urllib.request
 UA_DEFAULT = 'Mozilla/5.0 (research; web-research-fallback)'
 UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
               '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
-PROXY_KEYS = ('WEB_RESEARCH_PROXY', 'YT_DLP_PROXY')
-ENV_FILES = ('.env.dev.local', '.env.local', '.env')
+PROXY_KEYS = ('WEB_RESEARCH_PROXY',)
+CONFIG_NAME = 'wrf_config.json'
 CHALLENGE_MARKERS = ('just a moment', 'client challenge', 'checking your browser',
                      'enable javascript and cookies', 'access denied')
 
 
+def config_path():
+    """Свой конфиг скилла: wrf_config.json в корне репо (или путь из WRF_CONFIG)."""
+    return os.environ.get('WRF_CONFIG') or os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), CONFIG_NAME)
+
+
 def load_proxy(explicit=None):
-    """Прокси: --proxy/env → переменные окружения → env-файлы в cwd. None если нет."""
+    """Прокси: --proxy → env WEB_RESEARCH_PROXY → свой конфиг скилла. None если нет."""
     if explicit:
         return explicit
     for k in PROXY_KEYS:
         v = os.environ.get(k)
         if v:
             return v.strip().strip('"').strip("'")
-    for fn in ENV_FILES:
-        p = os.path.join(os.getcwd(), fn)
-        if os.path.exists(p):
-            for line in open(p, encoding='utf-8', errors='replace'):
-                line = line.strip()
-                for k in PROXY_KEYS:
-                    if line.startswith(k + '='):
-                        v = line.split('=', 1)[1].strip().strip('"').strip("'")
-                        if v:
-                            return v
+    p = config_path()
+    if os.path.exists(p):
+        try:
+            v = json.load(open(p, encoding='utf-8')).get('proxy') or ''
+        except Exception:
+            v = ''
+        v = v.strip().strip('"').strip("'")
+        if v:
+            return v
     return None
 
 

@@ -1,0 +1,3 @@
+{
+  "proxy": "https://user:password@proxy-host:port"
+}
