@@ -27,11 +27,12 @@ $ruCa = is_file(WrfClient::RU_CA) ? WrfClient::RU_CA : null;
 $attempts = [];
 $result = null;
 
-$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = []) use (&$attempts, &$result, $proxy, $timeout): bool {
-    $r = WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h, $ca);
+$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = [], bool $chrome = false) use (&$attempts, &$result, $proxy, $timeout): bool {
+    $r = $chrome ? WrfClient::chromeFetch($u, $useProxy ? $proxy : null, ($t ?? $timeout) * 1000) : WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h, $ca);
     $challenge = WrfClient::isChallenge($r['body']);
-    $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : $r['note']];
-    if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge) {
+    $shell = WrfClient::isJsShell($r['body']);
+    $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : $r['note'])];
+    if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge && !$shell) {
         $result = ['route' => $route, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body'], 'url' => $r['url']];
     }
     return $result !== null;
@@ -69,6 +70,21 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
                     }
                 }
             }
+        }
+    }
+    // Chrome-маршрут (приём news-web): JS-челлендж или JS-оболочка — рендерим браузером.
+    if ($result === null && !isset($opt['no-chrome'])) {
+        $needChrome = false;
+        foreach ($attempts as $a) {
+            if (in_array($a['note'], ['challenge', 'js-shell'], true)) {
+                $needChrome = true;
+                break;
+            }
+        }
+        if ($needChrome) {
+            // Chrome не умеет авторизованный прокси (--proxy-server без credentials),
+            // поэтому chrome-proxy не пробуем.
+            $try('chrome', $url, false, WrfClient::CHROME_UA, null, null, [], true);
         }
     }
     // Feed-маршрут (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.

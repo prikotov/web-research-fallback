@@ -47,6 +47,30 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 HTML этих сайтов с браузерным UA и заголовками из РФ — 200 (отказы ситуативны:
 datacenter-IP, настроение WAF); feed-маршрут — запасной путь и источник полных текстов.
 
+## JS-challenge и headless Chrome (проверено 2026-11-25)
+
+| Сайт | curl/browser-UA | headless Chrome | Примечание |
+|---|---|---|---|
+| tass.ru/search | 200, оболочка servicepipe (js-challenge-loader, 1.8–2.4 КБ) | 200, ~590 КБ с результатами | UA chrome = Linux/146 (как в news-web); Win/126 → снова оболочка |
+| google.com/search | 200, страница enablejs | не проверен | результаты только через JS |
+
+Chrome-маршрут включается автоматически при пометках challenge/js-shell в attempts;
+`--no-chrome` отключает. Авторизованный прокси chrome не поддерживает.
+
+## Внутри-сайтовый поиск новостей (шаблоны из skills/news-web t-invest-agent)
+
+Когда глобальные движки шумят, поиск самих сайтов отдаёт HTML без JS:
+
+| Сайт | Шаблон |
+|---|---|
+| Kommersant | `https://www.kommersant.ru/Search/Results?search_query={query}` |
+| RIA | `https://ria.ru/services/search/getmore/?query={query}&tags_limit=20&interval%5B%5D=year&sort%5B%5D=date` |
+| Interfax | `https://www.interfax.ru/search/?df={from}&dt={to}&phrase={query}` |
+| PRIME | `https://1prime.ru/services/search/getmore/?tags_limit=20&date_from={from}&date_to={to}&query={query}` |
+
+Полный новостной workflow (приоритеты источников, фильтрация шума, каскад периодов) —
+в skill `news-web` репо t-invest-agent, не здесь.
+
 ## Диагностика кодов
 
 - 000 / connect timeout — сеть или блокировка маршрута; пробовать прокси.

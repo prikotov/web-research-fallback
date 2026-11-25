@@ -26,8 +26,9 @@ JS-challenge («Just a moment», «Client Challenge»). Не делай выво
 ### fetch.php — `scripts/fetch.php`
 
 Достаёт тело недоступного URL, сам проходя цепочку маршрутов
-(direct → браузерный UA и смена схемы при HTTP-отказе → прокси → RSS/Atom-экспорт
-сайта → Wayback; при сетевой ошибке — сразу прокси; при TLS-отказе — бандл российских CA). Тело сохраняет в файл,
+(direct → браузерный UA и смена схемы при HTTP-отказе → прокси → headless Chrome
+при JS-challenge → RSS/Atom-экспорт сайта → Wayback; при сетевой ошибке — сразу
+прокси; при TLS-отказе — бандл российских CA). Тело сохраняет в файл,
 в stdout печатает JSON-отчёт о маршрутах и попытках.
 
 #### Запуск
@@ -47,6 +48,7 @@ php scripts/fetch.php URL [опции]
 | `--no-wayback` | Не ходить в Wayback | флаг | выключено |
 | `--ca` | Свой CA-бандл для обычных маршрутов (эмуляция машины без российских CA) | путь к PEM | системный trust store |
 | `--feed` | Явная RSS/Atom-лента для шага feed (сайт вне карты FEEDS) | URL ленты | из карты FEEDS по хосту |
+| `--no-chrome` | Не ходить в headless Chrome | флаг | выключено |
 
 #### Примеры
 
@@ -75,7 +77,7 @@ php scripts/fetch.php https://www.youtube.com/
 | Поле | Описание |
 |------|----------|
 | `ok` | Получено ли тело (200 без JS-challenge) |
-| `route` | Каким маршрутом взято: direct / direct-browser / direct-ruca / proxy / feed / wayback и их вариации |
+| `route` | Каким маршрутом взято: direct / direct-browser / direct-ruca / proxy / chrome / feed / wayback и их вариации |
 | `status`, `bytes` | HTTP-статус и размер тела |
 | `out` | Путь к сохранённому телу |
 | `final_url` | Итоговый адрес после редиректов (для цитирования) |
@@ -86,6 +88,8 @@ php scripts/fetch.php https://www.youtube.com/
 - Код выхода: 0 — тело получено, 1 — все маршруты мимо.
 - `route=feed`: тело — XML item ленты (заголовок, ссылка, дата, текст статьи),
   `final_url` — адрес ленты; статью цитировать по `link` item, не по ленте.
+- `route=chrome`: нужен установленный google-chrome/chromium; UA chrome должен
+  совпадать с платформой/версией реального браузера (иначе challenge фингерпринтит).
 - `ok=false` не значит «источника нет»: смотри `attempts` (где сломалось) и
   пробуй другие маршруты/архивы. Цепочку маршрутов скрипт проходит сам;
   порядок и обоснования — в README.

@@ -13,6 +13,10 @@ final class WrfClient
 {
     public const UA = 'Mozilla/5.0 (research; web-research-fallback)';
     public const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+    /** UA для headless Chrome: должен совпадать с платформой/версией реального
+     *  браузера, иначе JS-challenge фингерпринтит несоответствие (проверено:
+     *  Win/126 → оболочка 2.4 КБ, Linux/146 → 589 КБ контента). Строка из news-web. */
+    public const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
     /** Полный набор заголовков браузера: некоторые WAF смотрят не только на UA. */
     public const BROWSER_HEADERS = [
         'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -38,7 +42,7 @@ final class WrfClient
     public const CONFIG_NAME = '.wrf_config.json';
     /** Публичные корневой+промежуточный CA НУЦ Минцифры (не секрет). */
     public const RU_CA = __DIR__ . '/references/russian-trusted-ca.pem';
-    private const CHALLENGE_MARKERS = ['just a moment', 'client challenge', 'checking your browser', 'enable javascript and cookies', 'access denied'];
+    private const CHALLENGE_MARKERS = ['just a moment', 'client challenge', 'checking your browser', 'enable javascript and cookies', 'access denied', 'enablejs', 'js-challenge-loader', 'servicepipe.tech'];
 
     /** Путь собственного конфига: корень репо или WRF_CONFIG. */
     public static function configPath(): string
@@ -161,6 +165,46 @@ final class WrfClient
             }
         }
         return false;
+    }
+
+    /** JS-оболочка: 200 и тело есть, но контент рендерится только браузером
+     *  (TASS: 1.8 КБ с div#root против 619 КБ DOM с результатами). */
+    public static function isJsShell(string $body): bool
+    {
+        return strlen($body) < 5000 && (bool)preg_match('~<div id="(root|app|__next)"~', $body);
+    }
+
+    /** Headless Chrome для JS-челленджей (приём из skills/news-web t-invest-agent). */
+    public static function chromeBin(): ?string
+    {
+        foreach (['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'] as $bin) {
+            exec('command -v ' . escapeshellarg($bin) . ' 2>/dev/null', $out, $rc);
+            if ($rc === 0 && isset($out[0])) {
+                return trim($out[0]);
+            }
+        }
+        return null;
+    }
+
+    public static function chromeFetch(string $url, ?string $proxy = null, int $timeoutMs = 30000): array
+    {
+        $bin = self::chromeBin();
+        if ($bin === null) {
+            return ['body' => '', 'status' => 0, 'note' => 'no chrome binary', 'url' => $url];
+        }
+        $cmd = escapeshellarg($bin) . ' --headless=new --disable-gpu --disable-blink-features=AutomationControlled'
+            . ' --window-size=1920,1080 --user-agent=' . escapeshellarg(self::CHROME_UA)
+            . ' --dump-dom --timeout=' . (int)$timeoutMs;
+        if ($proxy !== null && $proxy !== '') {
+            $cmd .= ' --proxy-server=' . escapeshellarg($proxy);
+        }
+        $cmd .= ' ' . escapeshellarg($url) . ' 2>/dev/null';
+        exec($cmd, $lines, $rc);
+        $body = implode("\n", $lines);
+        if ($rc !== 0 || $body === '') {
+            return ['body' => '', 'status' => 0, 'note' => 'chrome exit ' . $rc, 'url' => $url];
+        }
+        return ['body' => $body, 'status' => 200, 'note' => '', 'url' => $url];
     }
 
     /** Смена схемы http/https: legacy-сайты только по http или битый TLS.
