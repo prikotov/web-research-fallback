@@ -138,6 +138,8 @@ stdout — JSON:
 Сайт не отвечает при исследовании: connect/read timeout, HTTP 000/403/502/429,
 JS-challenge («Just a moment», «Client Challenge»). Не делай вывод «источник
 недоступен» после первой попытки — пройди цепочку (скрипт делает её сам).
+Доступность конкретных хостов из конкретной сети (проверено, с датами) —
+`references/routes.md`; на другой сети картина может отличаться.
 
 ## Безопасность
 
@@ -159,14 +161,3 @@ JS-challenge («Just a moment», «Client Challenge»). Не делай выво
   не додумывать.
 - Сниппет поисковика — не проверенный факт: факт только из тела, взятого
   через `fetch.php`.
-
-## Известные особенности сети владельца
-
-Проверено 2026-11-13…24 (TasK, ai-trading-sources): YouTube и часть сайтов —
-direct connect timeout, через прокси 200; archive.org API — direct, снапшоты
-могут 429 → прокси; `api.github.com`, `cbr.ru`, `moex.com`,
-`eutils.ncbi.nlm.nih.gov` — direct; `lite.duckduckgo.com/lite/` POST — direct
-работает, `html.duckduckgo.com/html/` GET — пусто; finam.ru — 403 с research UA,
-200 с браузерным UA (проверено 2026-11-25); Wayback+прокси (cp1251) — запасной
-маршрут для перепечаток. Подробности и
-маршруты кейсов — `references/routes.md`.
