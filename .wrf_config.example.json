@@ -1,3 +1,6 @@
 {
-  "proxy": "https://user:password@proxy-host:port"
+  "proxy": "https://user:password@proxy-host:port",
+  "brave_api_key": "",
+  "tavily_api_key": "",
+  "jina_api_key": ""
 }

@@ -37,7 +37,7 @@
 - **Открывает то, что не открывается** — таймауты, 403/429, JS-challenge, гео-блоки: перебор способов доступа, включая прокси и архив Wayback
 - **Работает из России** — исходящие блокировки, фильтры по IP и UA, сертификаты НУЦ Минцифры учтены в переборе способов
 - **Подтверждает факты первоисточником** — тело страницы плюс способ и дата проверки; сниппеты поисковика — только для выбора URL
-- **Ищет источники по теме** — когда адрес неизвестен: Bing (ru-RU) и lite.duckduckgo выдают кандидатов (URL и сниппет), тело страницы берёт `fetch.php`
+- **Ищет источники по теме** — когда адрес неизвестен: Tavily/Brave/Jina (API-ключи), Bing (ru-RU) и lite.duckduckgo выдают кандидатов (URL и сниппет), тело страницы берёт `fetch.php`
 
 ## Что вы получите
 
@@ -112,7 +112,7 @@ php scripts/search.php "обзор рисков финансовых рынко�
 | `--proxy` | оба | Прокси явно, поверх env и конфига | из env/конфига |
 | `"запрос"` | search | Позиционный, обязательный: формулировка как для поисковика | — |
 | `--limit` | search | Сколько результатов вернуть | 10 |
-| `--engine` | search | Движок: auto (bing → ddg), bing, ddg | auto |
+| `--engine` | search | Движок: auto (tavily → brave → jina → bing → ddg), tavily, brave, jina, bing, ddg | auto |
 
 ### Через агента
 
@@ -148,10 +148,13 @@ stdout: {"ok": true, "method": "proxy", "status": 200, "bytes": 973149,
 
 ```bash
 cp .wrf_config.example.json .wrf_config.json   # в корне репо
-chmod 600 .wrf_config.json                    # затем заполнить поле "proxy"
+chmod 600 .wrf_config.json                    # затем заполнить "proxy" и ключи поисковых API
 ```
 
-`.wrf_config.json` — в `.gitignore` этого репо. Порядок разрешения:
+`.wrf_config.json` — в `.gitignore` этого репо. Поля: `proxy`,
+`brave_api_key`, `tavily_api_key`, `jina_api_key` (ключи опциональны:
+без них соответствующие движки пропускаются; jina-reader работает без ключа).
+Порядок разрешения прокси:
 `--proxy` → env `WEB_RESEARCH_PROXY` → `.wrf_config.json` (или путь из `WRF_CONFIG`).
 Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не читает.
 В коммитах секретов нет и быть не должно.
@@ -183,15 +186,18 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
    UA chrome обязан совпадать с платформой/версией реального браузера
    (Win/126 против Linux/146 — challenge фингерпринтит несоответствие).
    Авторизованный прокси chrome не умеет — chrome-proxy не пробуем.
-6. **feed** (опыт news-core): сайт закрыл HTML, но отдаёт RSS/Atom для
+6. **jina reader** (r.jina.ai через прокси): рендерит JS и отдаёт markdown;
+   включается при challenge/js-shell, если chrome не помог или отключён.
+   Работает без ключа; из РФ direct = 451, только прокси.
+7. **feed** (опыт news-core): сайт закрыл HTML, но отдаёт RSS/Atom для
    агрегаторов. Карта известных лент — `WrfClient::FEEDS` (RBC full.rss с полными
    текстами, Interfax, TASS, RIA, 1prime, Kommersant); ищется item со ссылкой на
    целевой URL, тело = XML item. Явная лента — `--feed`. Лента ходит с системным
    trust, затем через прокси.
-7. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
+8. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
    (обычно direct) → снапшот direct → при 429 снапшот через прокси.
    Пагинация и `?singlepage=1` — внутри снапшота.
-8. **archive.today в переборе нет**: из РФ недоступен и direct, и через прокси
+9. **archive.today в переборе нет**: из РФ недоступен и direct, и через прокси
    (проверено 2026-11-25, оба 000).
 
 ## Российские CA (сертификаты НУЦ Минцифры)

@@ -53,6 +53,24 @@ final class WrfClient
         return $env !== false && $env !== '' ? $env : __DIR__ . '/' . self::CONFIG_NAME;
     }
 
+    /** Конфиг скилла целиком (proxy + ключи поисковых API). */
+    public static function config(): array
+    {
+        $p = self::configPath();
+        if (!is_file($p)) {
+            return [];
+        }
+        $d = json_decode((string)file_get_contents($p), true);
+        return is_array($d) ? $d : [];
+    }
+
+    public static function configKey(string $key): ?string
+    {
+        $v = self::config()[$key] ?? null;
+        $v = is_string($v) ? trim($v) : '';
+        return $v !== '' ? $v : null;
+    }
+
     /** Прокси: --proxy → env WEB_RESEARCH_PROXY → конфиг скилла. null если нет. */
     public static function loadProxy(?string $explicit = null): ?string
     {
@@ -304,6 +322,92 @@ final class WrfClient
             }
         }
         return ['item' => null, 'status' => 200, 'note' => 'no item for url'];
+    }
+
+    /** Brave Search API: свой индекс, JSON, ключ X-Subscription-Token. */
+    public static function braveSearch(string $query, ?string $proxy = null, int $limit = 10): array
+    {
+        $key = self::configKey('brave_api_key');
+        if ($key === null) {
+            return ['results' => null, 'status' => 0, 'note' => 'no brave_api_key in config'];
+        }
+        $r = self::fetch('https://api.search.brave.com/res/v1/web/search?q=' . rawurlencode($query) . '&count=' . $limit, $proxy, self::UA, 25, null, ['X-Subscription-Token' => $key, 'Accept' => 'application/json']);
+        if ($r['status'] !== 200) {
+            return ['results' => null, 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $d = json_decode($r['body'], true);
+        $out = [];
+        foreach (($d['web']['results'] ?? []) as $it) {
+            $out[] = ['title' => (string)($it['title'] ?? ''), 'url' => (string)($it['url'] ?? ''), 'snippet' => mb_substr((string)($it['description'] ?? ''), 0, 300)];
+        }
+        return ['results' => $out ?: null, 'status' => 200, 'note' => ''];
+    }
+
+    /** Tavily: search API для агентов, ключ Bearer. */
+    public static function tavilySearch(string $query, ?string $proxy = null, int $limit = 10): array
+    {
+        $key = self::configKey('tavily_api_key');
+        if ($key === null) {
+            return ['results' => null, 'status' => 0, 'note' => 'no tavily_api_key in config'];
+        }
+        $body = json_encode(['query' => $query, 'max_results' => $limit, 'search_depth' => 'basic']);
+        $r = self::fetch('https://api.tavily.com/search', $proxy, self::UA, 30, $body, ['Authorization' => 'Bearer ' . $key, 'Content-Type' => 'application/json']);
+        if ($r['status'] !== 200) {
+            return ['results' => null, 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $d = json_decode($r['body'], true);
+        $out = [];
+        foreach (($d['results'] ?? []) as $it) {
+            $out[] = ['title' => (string)($it['title'] ?? ''), 'url' => (string)($it['url'] ?? ''), 'snippet' => mb_substr((string)($it['content'] ?? ''), 0, 300)];
+        }
+        return ['results' => $out ?: null, 'status' => 200, 'note' => ''];
+    }
+
+    /** Jina s.jina.ai: поиск для агентов; из РФ direct = 451, только через прокси.
+     *  Поиск требует ключ (401 без него); reader r.jina.ai — без ключа. */
+    public static function jinaSearch(string $query, ?string $proxy = null, int $limit = 10): array
+    {
+        $key = self::configKey('jina_api_key');
+        if ($key === null) {
+            return ['results' => null, 'status' => 0, 'note' => 'no jina_api_key in config'];
+        }
+        if ($proxy === null) {
+            return ['results' => null, 'status' => 0, 'note' => 'jina requires proxy (451 from RU)'];
+        }
+        $h = ['Accept' => 'application/json', 'Authorization' => 'Bearer ' . $key];
+        $r = self::fetch('https://s.jina.ai/' . rawurlencode($query), $proxy, self::UA, 40, null, $h);
+        if ($r['status'] !== 200) {
+            return ['results' => null, 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $d = json_decode($r['body'], true);
+        $out = [];
+        foreach (array_slice(($d['data'] ?? []), 0, $limit) as $it) {
+            $out[] = ['title' => (string)($it['title'] ?? ''), 'url' => (string)($it['url'] ?? ''), 'snippet' => mb_substr((string)($it['description'] ?? $it['content'] ?? ''), 0, 300)];
+        }
+        return ['results' => $out ?: null, 'status' => 200, 'note' => ''];
+    }
+
+    /** Jina r.jina.ai: reader, рендерит JS и отдаёт markdown; из РФ только прокси. */
+    public static function jinaReader(string $url, ?string $proxy = null): array
+    {
+        if ($proxy === null) {
+            return ['body' => '', 'status' => 0, 'note' => 'jina requires proxy (451 from RU)'];
+        }
+        $h = ['Accept' => 'application/json'];
+        $key = self::configKey('jina_api_key');
+        if ($key !== null) {
+            $h['Authorization'] = 'Bearer ' . $key;
+        }
+        $r = self::fetch('https://r.jina.ai/' . $url, $proxy, self::UA, 45, null, $h);
+        if ($r['status'] !== 200) {
+            return ['body' => '', 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $d = json_decode($r['body'], true);
+        $md = (string)($d['data']['content'] ?? $d['data']['markdown'] ?? '');
+        if ($md === '') {
+            return ['body' => '', 'status' => 200, 'note' => 'empty reader content'];
+        }
+        return ['body' => $md, 'status' => 200, 'note' => ''];
     }
 
     /** Поиск Bing: серверный HTML, рынок ru-RU обязателен (без него словари).

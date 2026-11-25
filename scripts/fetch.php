@@ -84,6 +84,25 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
             $try('chrome', $url, false, WrfClient::CHROME_UA, null, null, [], true);
         }
     }
+    // Jina reader (r.jina.ai): рендерит JS, отдаёт markdown; из РФ только прокси.
+    if ($result === null && $proxy !== null) {
+        $jsSeen = false;
+        foreach ($attempts as $a) {
+            if (in_array($a['note'], ['challenge', 'js-shell'], true)) {
+                $jsSeen = true;
+                break;
+            }
+        }
+        if ($jsSeen) {
+            $jr = WrfClient::jinaReader($url, $proxy);
+            if ($jr['body'] !== '') {
+                $attempts[] = ['method' => 'jina', 'status' => 200, 'note' => 'reader markdown'];
+                $result = ['method' => 'jina', 'status' => 200, 'bytes' => strlen($jr['body']), 'body' => $jr['body'], 'url' => $url];
+            } else {
+                $attempts[] = ['method' => 'jina', 'status' => $jr['status'], 'note' => $jr['note']];
+            }
+        }
+    }
     // Feed-способ (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.
     if ($result === null) {
         $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);

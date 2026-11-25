@@ -83,6 +83,8 @@ php scripts/fetch.php https://www.youtube.com/
   `final_url` — адрес ленты; статью цитировать по `link` item, не по ленте.
 - `method=chrome`: нужен установленный google-chrome/chromium; UA chrome должен
   совпадать с платформой/версией реального браузера (иначе challenge фингерпринтит).
+- `method=jina`: reader r.jina.ai через прокси (рендерит JS, отдаёт markdown);
+  работает без ключа, поиск s.jina.ai — с ключом.
 - `ok=false` не значит «источника нет»: смотри `attempts` (где сломалось) и
   пробуй другие способы/архивы. Цепочку способов скрипт проходит сам;
   порядок и обоснования — в README.
@@ -91,8 +93,10 @@ php scripts/fetch.php https://www.youtube.com/
 ### search.php — `scripts/search.php`
 
 Ищет URL источников по теме, когда адрес неизвестен или нужно набрать
-материалов. Движки: Bing (рынок ru-RU) и lite.duckduckgo.com (POST `q=`);
-порядок auto: bing → ddg, каждый движок direct → прокси.
+материалов. Движки: Tavily и Brave (API-ключи в конфиге), Jina s.jina.ai
+(ключ + прокси), Bing (рынок ru-RU) и lite.duckduckgo.com (POST `q=`).
+Порядок auto: tavily → brave → jina → bing → ddg; движки без ключей
+пропускаются, jina без прокси тоже (451 из РФ).
 google/yandex/mail.ru не используем: enablejs, captcha и оболочка авторизации;
 эмуляция Chrome не помогает — google прячет URL в /goto-токены (проверено 2026-11-25).
 
@@ -108,7 +112,7 @@ php scripts/search.php "запрос" [опции]
 |-------|----------|----------|--------------|
 | `"запрос"` | Позиционный, обязательный: формулировка как для поисковика | строка | — |
 | `--limit` | Сколько результатов вернуть | число (например: 5, 10, 20) | 10 |
-| `--engine` | Движок поиска | `auto`, `bing`, `ddg` | `auto` (bing → ddg) |
+| `--engine` | Движок поиска | `auto`, `tavily`, `brave`, `jina`, `bing`, `ddg` | `auto` |
 | `--proxy` | Прокси явно, поверх env и конфига | URL прокси | из env/конфига |
 
 #### Примеры

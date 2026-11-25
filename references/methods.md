@@ -26,6 +26,10 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 
 | Движок | Результат | Пригодность |
 |---|---|---|
+| api.tavily.com/search | доступен из РФ, нужен Bearer-ключ | да, движок tavily (ключ в конфиге) |
+| api.search.brave.com/res/v1/web/search | доступен из РФ (422 без параметров), нужен X-Subscription-Token | да, движок brave (ключ в конфиге) |
+| s.jina.ai (поиск) | direct 451 из РФ; без ключа 401 | да, движок jina: ключ + прокси |
+| r.jina.ai (reader) | direct 451 из РФ; через прокси 200 markdown без ключа | да, способ jina в fetch.php |
 | lite.duckduckgo.com/lite/ POST q= | 200, релевантно (cbr/moex/finam) | да, движок ddg |
 | bing.com/search с mkt=ru-RU&setlang=ru | 200, релевантно, серверный HTML | да, движок bing |
 | bing.com/search без mkt | 200, но словари «доля» | нет: рынок по умолчанию en |
