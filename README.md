@@ -40,11 +40,10 @@
 
 ## Что вы получите
 
-| Файл / вывод | Содержание |
+| Скрипт | Что делает |
 |------|------------|
-| `/tmp/wrf_<hash>.html` или файл из `--out` | Тело страницы; способ доступа указан в отчёте |
-| stdout `fetch.php` | JSON-отчёт: `ok`, `method`, `status`, `bytes`, `out`, `final_url`, `attempts[]` (каждая попытка с способом и пометкой) |
-| stdout `search.php` | JSON: `results[]` (`title`, `url`, `snippet`), `engine`, `method`, `status` |
+| `scripts/fetch.php` | Загружает содержимое адреса, перебирая способы доступа; тело сохраняет в файл, в stdout — JSON-отчёт о способе и попытках |
+| `scripts/search.php` | Ищет источники по теме; в stdout — JSON со списком кандидатов (title, url, snippet) и сработавшим движком |
 
 ## Зависимости
 
