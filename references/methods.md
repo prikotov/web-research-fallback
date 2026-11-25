@@ -1,19 +1,25 @@
-# Способы и кейсы (сеть владельца, проверено 2026-11-13…24)
+# Способы и кейсы (сеть владельца, проверено 2026-11-13…25)
 
-| Цель | Direct | Прокси | Wayback | Примечание |
+## Сетевые пробы (проверка связности способов, не источники)
+
+| Цель | Direct | Прокси | Примечание |
+|---|---|---|---|
+| youtube.com | connect timeout | 200 | прокси обязателен |
+| archive.org API (metadata/available/CDX) | 200 | — | снапшоты web.archive.org могут 429 → прокси |
+| api.github.com, suggestqueries.google.com | 200 | — | пробы доступности API |
+| eutils.ncbi.nlm.nih.gov | 200 | — | проба доступности API |
+| cbr.ru, moex.com | 200 | — | рабочие источники: см. cbr-core / moex-site-core |
+| sberbank.ru / gosuslugi.ru / digital.gov.ru | 200 на машине с российскими CA в trust; errno 60 без них | не лечит (доверие локальное) | сертификаты НУЦ Минцифры; hint отчёта ведёт на официальную установку (gosuslugi.ru/crt) |
+
+## Кейсы источников (реальные загрузки)
+
+| Цель | Direct | Прокси | Итог | Примечание |
 |---|---|---|---|---|
-| youtube.com | connect timeout | 200 | — | прокси обязателен |
-| archive.org API (metadata/available/CDX) | 200 | — | — | снапшоты web.archive.org могут 429 → прокси |
-| api.github.com, suggestqueries.google.com | 200 | — | — | |
-| cbr.ru, moex.com | 200 | — | — | см. cbr-core / moex-site-core |
-| eutils.ncbi.nlm.nih.gov | 200 | — | — | |
-| lite.duckduckgo.com/lite/ POST q= | 200 | 200 | — | html.duckduckgo.com/html/ GET — пусто |
 | finam.ru | 403 (research UA); challenge (browser UA, перепроверено 2026-11-25) | challenge | 200 через chrome | WAF меняется: раньше хватало browser UA, теперь нужен chrome |
-| rbc.ru | 200 с пустым телом для ботов | 200 через chrome | — | пустое тело триггерит chrome; `--virtual-time-budget` ломает RBC (0 байт) — не используем |
-| singjupost.com | timeout | read timeout/502 | 200 (2022-12-09, через прокси) | пример полного перебора способов |
-| scribd.com | JS-challenge | JS-challenge | пробовать | не вышло — «не проверено» |
-| archive.ph / archive.today | 000 | 000 | — | из РФ недоступен оба способа (2026-11-25); в перебор не добавлен |
-| sberbank.ru / gosuslugi.ru / digital.gov.ru | 200 на машине с российскими CA в trust; errno 60 без них | не лечит (доверие локальное) | 200 | сертификаты НУЦ Минцифры; hint отчёта ведёт на официальную установку (gosuslugi.ru/crt) |
+| rbc.ru | 200 с пустым телом для ботов | пустое тело | 200 через chrome | пустое тело триггерит chrome; `--virtual-time-budget` ломает RBC (0 байт) — не используем |
+| singjupost.com | timeout | read timeout/502 | 200 Wayback (2022-12-09, через прокси) | пример полного перебора способов |
+| scribd.com | JS-challenge | JS-challenge | не вышло | «не проверено», способ не найден |
+| archive.ph / archive.today | 000 | 000 | недоступен | из РФ недоступен оба способа (2026-11-25); в перебор не добавлен |
 
 ## Кейс: Reuters 29.07.2021 о нерезидентах на Мосбирже
 
