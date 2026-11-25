@@ -58,8 +58,8 @@ php scripts/fetch.php https://example.com/ --proxy http://user:pass@host:port
 # Только direct+прокси, без архива
 php scripts/fetch.php https://example.com/ --no-wayback
 
-# Тело в дефолтный /tmp-файл, отчёт читает агент
-php scripts/fetch.php https://www.youtube.com/
+# Закрытая от ботов статья: тело в дефолтный /tmp-файл, отчёт читает агент
+php scripts/fetch.php https://www.rbc.ru/rbcfreenews/6b067c5c4a4bff1cbe0b2a6a
 ```
 
 #### Результат

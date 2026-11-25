@@ -72,8 +72,8 @@ ln -s /path/to/web-research-fallback /path/to/shared/skills/web-research-fallbac
 ### Напрямую через PHP
 
 ```bash
-# Проверить страницу: скрипт сам переберёт способы, тело — в /tmp
-php scripts/fetch.php https://www.youtube.com/
+# Проверить закрытую статью: скрипт сам переберёт способы, тело — в /tmp
+php scripts/fetch.php https://www.rbc.ru/rbcfreenews/6b067c5c4a4bff1cbe0b2a6a
 
 # Сохранить тело для разбора в конкретный файл
 php scripts/fetch.php https://example.com/article --out /tmp/article.html
