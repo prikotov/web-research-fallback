@@ -13,19 +13,63 @@ license: MIT
 
 ## Скрипты
 
+### fetch.php — `scripts/fetch.php`
+
+Достаёт тело недоступного URL, сам проходя цепочку маршрутов
+(direct → вариации UA/схемы/www → прокси → Wayback). Тело сохраняет в файл,
+в stdout печатает JSON-отчёт о том, каким маршрутом и с какими попытками
+удалось (или не удалось) получить содержимое.
+
+Что получаешь в отчёте:
+- `ok`, `route`, `status`, `bytes` — итог: каким маршрутом взято тело;
+- `out` — путь к сохранённому телу (читать дальше его, а не stdout);
+- `attempts[]` — каждый маршрут со статусом и пометкой (`challenge`,
+  `curl errno N`, `no snapshot`): где именно цепочка сломалась;
+- `proxy_available` — был ли прокси в рантайме (если нет — цепочка короче).
+
 ```bash
-php scripts/fetch.php URL [--out FILE] [--proxy URL] [--timeout N] [--no-wayback]
-php scripts/search.php "запрос" [--limit 10]
+php scripts/fetch.php https://example.com/article --out /tmp/article.html
+php scripts/fetch.php https://example.com/ --timeout 40 --no-wayback
 ```
 
-- `fetch.php` — цепочка: direct → вариации (UA/схема/www) → прокси → Wayback
-  (available API → снапшот; при 429 снапшот через прокси). JSON-отчёт:
-  маршрут, статус, байты, путь тела, список попыток. Код выхода 0/1.
-- `search.php` — lite.duckduckgo.com/lite/ POST `q=` (direct → прокси);
-  JSON-список {title, url, snippet}.
-- Прокси: `--proxy` → env `WEB_RESEARCH_PROXY` → собственный конфиг скилла
-  `.wrf_config.json` (путь можно задать через `WRF_CONFIG`); настройка — в README.
-  Значение не выводится ни в stdout, ни в отчёты, ни в файлы.
+Параметры:
+- `URL` — позиционный, обязательный: что проверяем.
+- `--out FILE` — куда сохранить тело; без него — `/tmp/wrf_<hash>.html`.
+- `--proxy URL` — прокси явно, поверх env и конфига.
+- `--timeout N` — секунд на попытку (по умолчанию 20; вариации URL — 12).
+- `--no-wayback` — не ходить в Wayback (когда архив заведомо не нужен).
+
+Код выхода: 0 — тело получено (200 без JS-challenge), 1 — все маршруты мимо.
+`ok=false` не значит «источника нет»: смотри `attempts` и раздел «Цепочка».
+
+### search.php — `scripts/search.php`
+
+Ищет URL источников по теме, когда адрес неизвестен или нужно набрать
+материалов. Поиск через lite.duckduckgo.com (POST `q=`), при неудаче direct —
+через прокси. В stdout — JSON со списком найденного.
+
+Что получаешь:
+- `results[]` — `{title, url, snippet}`: заголовок, адрес, сниппет выдачи;
+- `route`, `status` — каким маршрутом искал.
+
+```bash
+php scripts/search.php "moex retail investors share 2021" --limit 8
+```
+
+Параметры:
+- `"запрос"` — позиционный, обязательный; формулировка как для поисковика.
+- `--limit N` — сколько результатов вернуть (по умолчанию 10).
+- `--proxy URL` — прокси явно, поверх env и конфига.
+
+Сниппет — не проверенный факт: каждый перспективный URL открывай через
+`fetch.php` и фиксируй маршрут в карточке источника.
+
+### Прокси (общий для обоих скриптов)
+
+Порядок разрешения: `--proxy` → env `WEB_RESEARCH_PROXY` → собственный конфиг
+скилла `.wrf_config.json` (путь можно задать через `WRF_CONFIG`); настройка —
+в README. Значение прокси не выводится ни в stdout, ни в отчёты, ни в файлы;
+в отчётах только имена маршрутов и `proxy_available`.
 
 ## Когда использовать
 
