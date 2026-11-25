@@ -21,13 +21,12 @@ $url = $pos[0];
 $timeout = (int)($opt['timeout'] ?? 20);
 WrfClient::ensureConfigIgnored();
 $proxy = WrfClient::loadProxy(isset($opt['proxy']) ? (string)$opt['proxy'] : null);
-$caOpt = isset($opt['ca']) ? (string)$opt['ca'] : null;
 
 $attempts = [];
 $result = null;
 
-$try = function (string $method, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = [], bool $chrome = false) use (&$attempts, &$result, $proxy, $timeout): bool {
-    $r = $chrome ? WrfClient::chromeFetch($u, $useProxy ? $proxy : null, ($t ?? $timeout) * 1000) : WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h, $ca);
+$try = function (string $method, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, array $h = [], bool $chrome = false) use (&$attempts, &$result, $proxy, $timeout): bool {
+    $r = $chrome ? WrfClient::chromeFetch($u, $useProxy ? $proxy : null, ($t ?? $timeout) * 1000) : WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h);
     $challenge = WrfClient::isChallenge($r['body']);
     $shell = WrfClient::isJsShell($r['body']);
     $attempts[] = ['method' => $method, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : $r['note'])];
@@ -41,7 +40,7 @@ $lastNote = static function () use (&$attempts): string {
     return (string)end($attempts)['note'];
 };
 
-if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
+if (!$try('direct', $url, false, WrfClient::UA, null)) {
     if (WrfClient::isTlsError($lastNote())) {
         // Сертификаты НУЦ Минцифры: доверие локальное, прокси не лечит.
         // Причина и официальная ссылка установки — в hint отчёта.
@@ -50,19 +49,19 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
         // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
         // вариации на том же способе бессмысленны: сразу прокси.
         if (!WrfClient::isNetworkError($lastNote())) {
-            if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
+            if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), WrfClient::BROWSER_HEADERS)) {
                 foreach (WrfClient::urlVariants($url) as $i => $v) {
-                    if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
+                    if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout), WrfClient::BROWSER_HEADERS)) {
                         break;
                     }
                 }
             }
         }
         if ($result === null && $proxy !== null) {
-            if (!$try('proxy', $url, true, WrfClient::UA_BROWSER, null, $caOpt, WrfClient::BROWSER_HEADERS)) {
+            if (!$try('proxy', $url, true, WrfClient::UA_BROWSER, null, WrfClient::BROWSER_HEADERS)) {
                 if (!WrfClient::isNetworkError($lastNote())) {
                     foreach (WrfClient::urlVariants($url) as $i => $v) {
-                        if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
+                        if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout), WrfClient::BROWSER_HEADERS)) {
                             break;
                         }
                     }
@@ -89,9 +88,9 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
     if ($result === null) {
         $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);
         if ($feedUrl !== null) {
-            $fi = WrfClient::feedItem($feedUrl, $url, null, null);
+            $fi = WrfClient::feedItem($feedUrl, $url);
             if ($fi['item'] === null && $proxy !== null) {
-                $fi = WrfClient::feedItem($feedUrl, $url, $proxy, null);
+                $fi = WrfClient::feedItem($feedUrl, $url, $proxy);
             }
             if ($fi['item'] !== null) {
                 $attempts[] = ['method' => 'feed', 'status' => 200, 'note' => 'item: ' . $fi['item']['link']];

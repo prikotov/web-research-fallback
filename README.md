@@ -86,9 +86,6 @@ php scripts/fetch.php https://example.com/ --timeout 40
 # Только direct+прокси, без архива
 php scripts/fetch.php https://example.com/ --no-wayback
 
-# Эмуляция машины без российских CA: direct даст errno 60, отчёт вернёт hint со ссылкой установки
-php scripts/fetch.php https://www.sberbank.ru/ --ca foreign-only.pem
-
 # Сайт вне карты FEEDS: явная лента для шага feed
 php scripts/fetch.php https://example.com/article --feed https://example.com/rss.xml
 
@@ -110,7 +107,6 @@ php scripts/search.php "обзор рисков финансовых рынко�
 | `--out` | fetch | Куда сохранить тело | `/tmp/wrf_<hash>.html` |
 | `--timeout` | fetch | Секунд на попытку | 20 (вариации URL — 12) |
 | `--no-wayback` | fetch | Не ходить в Wayback | выключено |
-| `--ca` | fetch | Свой CA-бандл для проверок (эмуляция другого trust store) | системный trust store |
 | `--feed` | fetch | Явная RSS/Atom-лента для шага feed | из карты FEEDS по хосту |
 | `--no-chrome` | fetch | Не ходить в headless Chrome | выключено |
 | `--proxy` | оба | Прокси явно, поверх env и конфига | из env/конфига |

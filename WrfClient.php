@@ -117,7 +117,7 @@ final class WrfClient
      * GET/POST через curl; прокси любой схемы (http/https/socks) поддерживает CURLOPT_PROXY.
      * @return array{body:string,status:int,note:string}
      */
-    public static function fetch(string $url, ?string $proxy = null, string $ua = self::UA, int $timeout = 20, ?string $data = null, array $headers = [], ?string $caInfo = null): array
+    public static function fetch(string $url, ?string $proxy = null, string $ua = self::UA, int $timeout = 20, ?string $data = null, array $headers = []): array
     {
         $ch = curl_init($url);
         $hdrs = $headers;
@@ -138,9 +138,6 @@ final class WrfClient
         ]);
         if ($proxy !== null && $proxy !== '') {
             curl_setopt($ch, CURLOPT_PROXY, $proxy);
-        }
-        if ($caInfo !== null && $caInfo !== '') {
-            curl_setopt($ch, CURLOPT_CAINFO, $caInfo);
         }
         if ($data !== null) {
             curl_setopt($ch, CURLOPT_POST, true);
@@ -282,9 +279,9 @@ final class WrfClient
         return self::FEEDS[$host] ?? null;
     }
 
-    public static function feedItem(string $feedUrl, string $targetUrl, ?string $proxy = null, ?string $caInfo = null): array
+    public static function feedItem(string $feedUrl, string $targetUrl, ?string $proxy = null): array
     {
-        $r = self::fetch($feedUrl, $proxy, self::UA, 25, null, [], $caInfo);
+        $r = self::fetch($feedUrl, $proxy, self::UA, 25);
         if ($r['status'] !== 200 || $r['body'] === '') {
             return ['item' => null, 'status' => $r['status'], 'note' => $r['note']];
         }

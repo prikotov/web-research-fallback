@@ -40,7 +40,6 @@ php scripts/fetch.php URL [опции]
 | `--proxy` | Прокси явно, поверх env и конфига | URL прокси | из env/конфига |
 | `--timeout` | Секунд на попытку | число | 20 (вариации URL — 12) |
 | `--no-wayback` | Не ходить в Wayback | флаг | выключено |
-| `--ca` | Свой CA-бандл для проверок (эмуляция другого trust store) | путь к PEM | системный trust store |
 | `--feed` | Явная RSS/Atom-лента для шага feed (сайт вне карты FEEDS) | URL ленты | из карты FEEDS по хосту |
 | `--no-chrome` | Не ходить в headless Chrome | флаг | выключено |
 
