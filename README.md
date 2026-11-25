@@ -100,6 +100,16 @@ php scripts/fetch.php https://example.com/article --feed https://example.com/rss
 | `--no-chrome` | Не ходить в headless Chrome | выключено |
 | `--proxy` | Прокси явно, поверх env и конфига | из env/конфига |
 
+#### Результаты fetch.php
+
+- Тело страницы — в файле из `--out` (или `/tmp/wrf_<hash>.html`); разбирать его, не stdout.
+- stdout — JSON-отчёт: `ok`, `method`, `status`, `bytes`, `out`, `final_url`,
+  `hint` (при TLS-отказе — причина и ссылка установки сертификатов),
+  `attempts[]` (каждая попытка: способ, статус, пометка).
+- Код выхода: 0 — тело получено, 1 — все способы мимо.
+- Предупреждения (например, пополнение .gitignore) — в stderr, не в отчёт.
+- Секретов в отчётах нет: только имена способов и `proxy_available`.
+
 ### search.php — поиск источников
 
 ```bash
@@ -127,6 +137,13 @@ google/yandex/mail.ru не используем: enablejs, captcha и оболо
 | `--engine` | Движок: auto (tavily → brave → jina → bing → ddg), tavily, brave, jina, bing, ddg | auto |
 | `--proxy` | Прокси явно, поверх env и конфига | из env/конфига |
 
+#### Результаты search.php
+
+- stdout — JSON: `results[]` (`title`, `url`, `snippet`), `engine`, `method`,
+  `status`, `note`.
+- Код выхода: 0 — есть результаты, 1 — пусто.
+- Сниппеты — только для выбора URL; информацию из них не брать.
+
 ### Через агента
 
 После установки skill агент автоматически узнаёт о нём. Примеры запросов:
@@ -146,20 +163,6 @@ google/yandex/mail.ru не используем: enablejs, captcha и оболо
 При выполнении этого запроса статья Reuters о нерезидентах на Мосбирже
 (29.07.2021) была взята через Wayback+прокси: оригинал недоступен,
 перепечатка Finam отдавала 403. Так скилл и работал в бою.
-
-## Результаты
-
-Тело страницы сохраняется в файл, отчёт печатается в stdout:
-
-```
-/tmp/wrf_3f2a9c01b7.html          # тело страницы (--out или дефолтный /tmp-файл)
-stdout: {"ok": true, "method": "proxy", "status": 200, "bytes": 973149,
-         "out": "/tmp/wrf_3f2a9c01b7.html", "attempts": […]}
-```
-
-Код выхода: 0 — тело получено, 1 — все способы мимо. Предупреждения
-(например, пополнение .gitignore) идут в stderr, не в отчёт. Секретов
-в отчётах нет: только имена способов и `proxy_available`.
 
 ## Конфиг и секреты
 
