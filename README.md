@@ -54,6 +54,21 @@ php scripts/search.php "moex retail investors share 2021" --limit 8
 (без секретов); тело сохраняет в `--out` или `/tmp/wrf_<hash>.html`.
 `search.php` — JSON-список результатов ddg lite.
 
+## Российские CA (сертификаты НУЦ Минцифры)
+
+Российские сайты (sberbank.ru, gosuslugi.ru, …) перешли на сертификаты
+российского УЦ; дефолтный trust store их не знает → curl errno 60.
+В скилле лежит публичный бандл `references/russian-trusted-ca.pem`
+(корневой + промежуточный CA): шаг цепочки `direct-ruca` использует его
+через CURLOPT_CAINFO. Прокси TLS-недоверие не лечит (проверка локальная).
+
+Происхождение бандла (2026-11-25): зеркала github.com/AKotov-dev/russiancrt
+и github.com/umatrix81/certsru; SHA256 корневого сертификата сверен между
+зеркалами: `D2:6D:2D:02:31:B7:C3:9F:92:CC:73:85:12:BA:54:10:35:19:E4:40:5D:68:B5:BD:70:3E:97:88:CA:8E:CF:31`.
+Официальные инструкции по установке в систему: https://www.sberbank.ru/ru/certificates.
+Проверка сценария «чистая машина»: `php scripts/fetch.php URL --ca foreign-only.pem`
+(direct даст errno 60, direct-ruca — 200).
+
 ## Правила
 
 - Не выводить прокси/токены в stdout, логи, файлы, отчёты; никаких `curl -v` с прокси.

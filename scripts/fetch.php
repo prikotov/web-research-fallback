@@ -21,12 +21,14 @@ $url = $pos[0];
 $timeout = (int)($opt['timeout'] ?? 20);
 WrfClient::ensureConfigIgnored();
 $proxy = WrfClient::loadProxy(isset($opt['proxy']) ? (string)$opt['proxy'] : null);
+$caOpt = isset($opt['ca']) ? (string)$opt['ca'] : null;
+$ruCa = is_file(WrfClient::RU_CA) ? WrfClient::RU_CA : null;
 
 $attempts = [];
 $result = null;
 
-$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null) use (&$attempts, &$result, $proxy, $timeout): bool {
-    $r = WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout);
+$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null) use (&$attempts, &$result, $proxy, $timeout): bool {
+    $r = WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, [], $ca);
     $challenge = WrfClient::isChallenge($r['body']);
     $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : $r['note']];
     if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge) {
@@ -39,24 +41,31 @@ $lastNote = static function () use (&$attempts): string {
     return (string)end($attempts)['note'];
 };
 
-if (!$try('direct', $url)) {
-    // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
-    // вариации на том же маршруте бессмысленны: сразу прокси.
-    if (!WrfClient::isNetworkError($lastNote())) {
-        if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout))) {
-            foreach (WrfClient::urlVariants($url) as $i => $v) {
-                if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout))) {
-                    break;
+if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
+    if (WrfClient::isTlsError($lastNote())) {
+        // Сертификаты НУЦ Минцифры: лечим бандлом российских CA, не прокси.
+        if ($ruCa === null || !$try('direct-ruca', $url, false, WrfClient::UA_BROWSER, null, $ruCa)) {
+            $attempts[] = ['route' => 'proxy', 'status' => null, 'note' => 'skipped: TLS-доверие локальное, прокси не лечит'];
+        }
+    } else {
+        // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
+        // вариации на том же маршруте бессмысленны: сразу прокси.
+        if (!WrfClient::isNetworkError($lastNote())) {
+            if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+                foreach (WrfClient::urlVariants($url) as $i => $v) {
+                    if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+                        break;
+                    }
                 }
             }
         }
-    }
-    if ($result === null && $proxy !== null) {
-        if (!$try('proxy', $url, true, WrfClient::UA_BROWSER)) {
-            if (!WrfClient::isNetworkError($lastNote())) {
-                foreach (WrfClient::urlVariants($url) as $i => $v) {
-                    if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout))) {
-                        break;
+        if ($result === null && $proxy !== null) {
+            if (!$try('proxy', $url, true, WrfClient::UA_BROWSER, null, $caOpt)) {
+                if (!WrfClient::isNetworkError($lastNote())) {
+                    foreach (WrfClient::urlVariants($url) as $i => $v) {
+                        if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+                            break;
+                        }
                     }
                 }
             }
@@ -88,6 +97,7 @@ WrfClient::emit([
     'out' => $out,
     'final_url' => $result['url'] ?? null,
     'proxy_available' => $proxy !== null,
+    'ru_ca_available' => $ruCa !== null,
     'attempts' => $attempts,
 ]);
 exit($result !== null ? 0 : 1);

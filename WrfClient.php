@@ -14,6 +14,8 @@ final class WrfClient
     public const UA = 'Mozilla/5.0 (research; web-research-fallback)';
     public const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
     public const CONFIG_NAME = '.wrf_config.json';
+    /** Публичные корневой+промежуточный CA НУЦ Минцифры (не секрет). */
+    public const RU_CA = __DIR__ . '/references/russian-trusted-ca.pem';
     private const CHALLENGE_MARKERS = ['just a moment', 'client challenge', 'checking your browser', 'enable javascript and cookies', 'access denied'];
 
     /** Путь собственного конфига: корень репо или WRF_CONFIG. */
@@ -87,7 +89,7 @@ final class WrfClient
      * GET/POST через curl; прокси любой схемы (http/https/socks) поддерживает CURLOPT_PROXY.
      * @return array{body:string,status:int,note:string}
      */
-    public static function fetch(string $url, ?string $proxy = null, string $ua = self::UA, int $timeout = 20, ?string $data = null, array $headers = []): array
+    public static function fetch(string $url, ?string $proxy = null, string $ua = self::UA, int $timeout = 20, ?string $data = null, array $headers = [], ?string $caInfo = null): array
     {
         $ch = curl_init($url);
         $hdrs = $headers;
@@ -108,6 +110,9 @@ final class WrfClient
         ]);
         if ($proxy !== null && $proxy !== '') {
             curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+        if ($caInfo !== null && $caInfo !== '') {
+            curl_setopt($ch, CURLOPT_CAINFO, $caInfo);
         }
         if ($data !== null) {
             curl_setopt($ch, CURLOPT_POST, true);
@@ -153,6 +158,14 @@ final class WrfClient
     public static function isNetworkError(string $note): bool
     {
         return (bool)preg_match('/curl errno (6|7|28)\b/', $note);
+    }
+
+    /** TLS-отказ (errno 60 и род.): российские сайты на сертификатах НУЦ Минцифры,
+     *  которых нет в дефолтном trust store. Лечится бандлом российских CA,
+     *  а не прокси: доверие к сертификату проверяется локально. */
+    public static function isTlsError(string $note): bool
+    {
+        return (bool)preg_match('/curl errno (35|51|58|60|77|80|82|83|90|91)\b/', $note);
     }
 
     /** Ближайший снапшот Wayback (API обычно доступен напрямую). */
