@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  *   php scripts/search.php "запрос" [--limit 10] [--engine auto|bing|ddg] [--proxy URL]
  *
- * JSON {query, engine, route, status, note, results:[{title,url,snippet}]}.
+ * JSON {query, engine, method, status, note, results:[{title,url,snippet}]}.
  * auto: bing (mkt=ru-RU) → ddg; каждый движок direct → прокси.
  * google/yandex/mail.ru не используем: JS-оболочка или captcha (проверено 2026-11-25).
  */
@@ -27,16 +27,16 @@ $proxy = WrfClient::loadProxy(isset($opt['proxy']) ? (string)$opt['proxy'] : nul
 $engines = $engineOpt === 'auto' ? ['bing', 'ddg'] : [$engineOpt];
 $r = ['results' => null, 'status' => 0, 'note' => 'unknown engine'];
 $engineUsed = null;
-$route = null;
+$method = null;
 foreach ($engines as $eng) {
     $call = static fn (?string $p) => $eng === 'bing'
         ? WrfClient::bingSearch($query, $p, $limit)
         : WrfClient::ddgLite($query, $p, $limit);
     $r = $call(null);
-    $route = $eng;
+    $method = $eng;
     if ($r['results'] === null && $proxy !== null) {
         $r = $call($proxy);
-        $route = $eng . '-proxy';
+        $method = $eng . '-proxy';
     }
     if ($r['results'] !== null) {
         $engineUsed = $eng;
@@ -46,7 +46,7 @@ foreach ($engines as $eng) {
 WrfClient::emit([
     'query' => $query,
     'engine' => $engineUsed,
-    'route' => $r['results'] !== null ? $route : null,
+    'method' => $r['results'] !== null ? $method : null,
     'status' => $r['status'],
     'note' => $r['note'],
     'results' => $r['results'] ?? [],

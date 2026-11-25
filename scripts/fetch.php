@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  *   php scripts/fetch.php URL [--out FILE] [--proxy URL] [--timeout 20] [--no-wayback]
  *
- * JSON-отчёт {url, ok, route, status, bytes, out, proxy_available, attempts}.
+ * JSON-отчёт {url, ok, method, status, bytes, out, proxy_available, attempts}.
  * Секреты в отчёт не попадают. Код выхода 0/1.
  */
 require_once dirname(__DIR__) . '/WrfClient.php';
@@ -27,13 +27,13 @@ $ruCa = is_file(WrfClient::RU_CA) ? WrfClient::RU_CA : null;
 $attempts = [];
 $result = null;
 
-$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = [], bool $chrome = false) use (&$attempts, &$result, $proxy, $timeout): bool {
+$try = function (string $method, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = [], bool $chrome = false) use (&$attempts, &$result, $proxy, $timeout): bool {
     $r = $chrome ? WrfClient::chromeFetch($u, $useProxy ? $proxy : null, ($t ?? $timeout) * 1000) : WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h, $ca);
     $challenge = WrfClient::isChallenge($r['body']);
     $shell = WrfClient::isJsShell($r['body']);
-    $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : $r['note'])];
+    $attempts[] = ['method' => $method, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : $r['note'])];
     if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge && !$shell) {
-        $result = ['route' => $route, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body'], 'url' => $r['url']];
+        $result = ['method' => $method, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body'], 'url' => $r['url']];
     }
     return $result !== null;
 };
@@ -46,11 +46,11 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
     if (WrfClient::isTlsError($lastNote())) {
         // Сертификаты НУЦ Минцифры: лечим бандлом российских CA, не прокси.
         if ($ruCa === null || !$try('direct-ruca', $url, false, WrfClient::UA_BROWSER, null, $ruCa)) {
-            $attempts[] = ['route' => 'proxy', 'status' => null, 'note' => 'skipped: TLS-доверие локальное, прокси не лечит'];
+            $attempts[] = ['method' => 'proxy', 'status' => null, 'note' => 'skipped: TLS-доверие локальное, прокси не лечит'];
         }
     } else {
         // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
-        // вариации на том же маршруте бессмысленны: сразу прокси.
+        // вариации на том же способе бессмысленны: сразу прокси.
         if (!WrfClient::isNetworkError($lastNote())) {
             if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
                 foreach (WrfClient::urlVariants($url) as $i => $v) {
@@ -72,7 +72,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
             }
         }
     }
-    // Chrome-маршрут (приём news-web): JS-челлендж или JS-оболочка — рендерим браузером.
+    // Chrome-способ (приём news-web): JS-челлендж или JS-оболочка — рендерим браузером.
     if ($result === null && !isset($opt['no-chrome'])) {
         $needChrome = false;
         foreach ($attempts as $a) {
@@ -87,7 +87,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
             $try('chrome', $url, false, WrfClient::CHROME_UA, null, null, [], true);
         }
     }
-    // Feed-маршрут (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.
+    // Feed-способ (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.
     if ($result === null) {
         $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);
         if ($feedUrl !== null) {
@@ -99,10 +99,10 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
                 $fi = WrfClient::feedItem($feedUrl, $url, $proxy, null);
             }
             if ($fi['item'] !== null) {
-                $attempts[] = ['route' => 'feed', 'status' => 200, 'note' => 'item: ' . $fi['item']['link']];
-                $result = ['route' => 'feed', 'status' => 200, 'bytes' => strlen($fi['item']['body']), 'body' => $fi['item']['body'], 'url' => $fi['item']['feed']];
+                $attempts[] = ['method' => 'feed', 'status' => 200, 'note' => 'item: ' . $fi['item']['link']];
+                $result = ['method' => 'feed', 'status' => 200, 'bytes' => strlen($fi['item']['body']), 'body' => $fi['item']['body'], 'url' => $fi['item']['feed']];
             } else {
-                $attempts[] = ['route' => 'feed', 'status' => $fi['status'], 'note' => $fi['note']];
+                $attempts[] = ['method' => 'feed', 'status' => $fi['status'], 'note' => $fi['note']];
             }
         }
     }
@@ -113,7 +113,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
                 $try('wayback-proxy', $snap, true);
             }
         } else {
-            $attempts[] = ['route' => 'wayback', 'status' => null, 'note' => 'no snapshot'];
+            $attempts[] = ['method' => 'wayback', 'status' => null, 'note' => 'no snapshot'];
         }
     }
 }
@@ -126,7 +126,7 @@ if ($result !== null) {
 WrfClient::emit([
     'url' => $url,
     'ok' => $result !== null,
-    'route' => $result['route'] ?? null,
+    'method' => $result['method'] ?? null,
     'status' => $result['status'] ?? null,
     'bytes' => $result['bytes'] ?? 0,
     'out' => $out,

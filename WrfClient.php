@@ -220,7 +220,7 @@ final class WrfClient
     }
 
     /** Сетевая ошибка (DNS/connect/timeout): типична для исходящих блокировок из РФ;
-     *  вариации UA/схемы на том же маршруте бессмысленны — сразу прокси. */
+     *  вариации UA/схемы на том же способе бессмысленны — сразу прокси. */
     public static function isNetworkError(string $note): bool
     {
         return (bool)preg_match('/curl errno (6|7|28)\b/', $note);
@@ -271,7 +271,7 @@ final class WrfClient
         return ['results' => array_slice($out, 0, $limit), 'status' => 200, 'note' => ''];
     }
 
-    /** Feed-маршрут: сайт закрыл HTML, но отдаёт RSS/Atom (опыт news-core).
+    /** Feed-способ: сайт закрыл HTML, но отдаёт RSS/Atom (опыт news-core).
      *  Ищет item со ссылкой на целевой URL; тело = XML item (в т.ч. полный текст). */
     public static function feedFor(string $url): ?string
     {
