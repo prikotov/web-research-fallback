@@ -233,6 +233,7 @@ chmod 600 .wrf_config.json
 - Rate limit уважать; временные файлы — в `/tmp`.
 - «Не проверено» фиксировать явно; из сниппетов поисковика информацию не брать —
   они только для выбора URL, факт из тела страницы.
+- Прямые коммиты в `main` запрещены (branch protection): изменения — через ветку и pull request.
 
 Подробнее — [SKILL.md](SKILL.md), способы и кейсы — [references/methods.md](references/methods.md).
 
