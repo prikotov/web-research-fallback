@@ -17,4 +17,4 @@ __pycache__/
 .DS_Store
 Thumbs.db
 # Own config with secrets
-wrf_config.json
+.wrf_config.json

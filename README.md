@@ -20,12 +20,12 @@ ln -s /home/dp/MyProjects/web-research-fallback /home/dp/MyProjects/.ai_sync/.ag
 ## Настройка прокси (собственный конфиг скилла)
 
 ```bash
-cp wrf_config.example.json wrf_config.json   # в корне репо
-chmod 600 wrf_config.json                    # затем заполнить поле "proxy"
+cp .wrf_config.example.json .wrf_config.json   # в корне репо
+chmod 600 .wrf_config.json                    # затем заполнить поле "proxy"
 ```
 
-`wrf_config.json` — в `.gitignore` этого репо. Порядок разрешения:
-`--proxy` → env `WEB_RESEARCH_PROXY` → `wrf_config.json` (или путь из `WRF_CONFIG`).
+`.wrf_config.json` — в `.gitignore` этого репо. Порядок разрешения:
+`--proxy` → env `WEB_RESEARCH_PROXY` → `.wrf_config.json` (или путь из `WRF_CONFIG`).
 Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не читает.
 В коммитах секретов нет и быть не должно.
 

@@ -13,7 +13,7 @@ UA_DEFAULT = 'Mozilla/5.0 (research; web-research-fallback)'
 UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
               '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
 PROXY_KEYS = ('WEB_RESEARCH_PROXY',)
-CONFIG_NAME = 'wrf_config.json'
+CONFIG_NAME = '.wrf_config.json'
 CHALLENGE_MARKERS = ('just a moment', 'client challenge', 'checking your browser',
                      'enable javascript and cookies', 'access denied')
 

@@ -23,8 +23,8 @@ python3 scripts/search.py "запрос" [--limit 10]
 - `search.py` — lite.duckduckgo.com/lite/ POST `q=` (direct → прокси);
   JSON-список {title, url, snippet}.
 - Прокси: `--proxy` → env `WEB_RESEARCH_PROXY` → собственный конфиг скилла
-  `wrf_config.json` в корне репо (или путь из `WRF_CONFIG`; пример —
-  `wrf_config.example.json`; файл в `.gitignore`, права 600).
+  `.wrf_config.json` в корне репо (или путь из `WRF_CONFIG`; пример —
+  `.wrf_config.example.json`; файл в `.gitignore`, права 600).
   Значение не выводится ни в stdout, ни в отчёты, ни в файлы.
 
 ## Когда использовать
