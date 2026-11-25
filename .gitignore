@@ -1,0 +1,18 @@
+# Secrets — never here
+.env
+.env.*
+*.token.json
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
