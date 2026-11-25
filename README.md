@@ -1,31 +1,116 @@
 # Web Research Fallback
 
-> Переносимый скилл и скрипты доступа к недоступным веб-источникам:
-> диагностика → вариации URL/UA → прокси → Wayback Machine; поиск через
-> lite.duckduckgo. Для любого проекта и агента.
+> Доступ к недоступным веб-источникам: цепочка маршрутов (direct → прокси → Wayback), поиск через lite.duckduckgo. Для любого проекта и агента.
 
-Структура — как у `cbr-core` / `google-analytics-core`: корневой `SKILL.md`
-(навык: как пользоваться), скрипты в `scripts/`, справка маршрутов в
-`references/`. PHP 8.4+, ext-curl, без composer-зависимостей — как
-`Ga4Client.php` в google-analytics-core.
+## Зачем это нужно
 
-Общий клиент — `WrfClient.php` в корне: `loadProxy` (--proxy → env → конфиг),
-`ensureConfigIgnored` (проверка/пополнение .gitignore репо, где лежит конфиг;
-приём из `Ga4Client.php`), `fetch` через ext-curl (прокси любой схемы),
-`isChallenge`, `urlVariants`, `waybackSnapshot`, `ddgLite`, `argv`/`emit`.
-Скрипты `scripts/fetch.php` и `scripts/search.php` — тонкие CLI над клиентом.
+Этот skill проверяет источники, которые не открываются с первой попытки. Данные помогают:
+
+- **Не сдаваться после первой ошибки** — timeout, 403, 429, JS-challenge это свойство маршрута, а не приговор источнику
+- **Проверять источник, а не сниппет** — тело страницы берётся цепочкой маршрутов, маршрут и дата фиксируются в отчёте
+- **Работать из России** — исходящие блокировки, гео-фильтры по IP, фильтры по UA, сертификаты НУЦ Минцифры
+- **Набирать материалы по теме** — поиск источников, когда адрес неизвестен
+
+## Что вы получите
+
+| Файл / вывод | Содержание |
+|------|------------|
+| `/tmp/wrf_<hash>.html` или файл из `--out` | Тело страницы, взятое цепочкой маршрутов |
+| stdout `fetch.php` | JSON-отчёт: `ok`, `route`, `status`, `bytes`, `out`, `final_url`, `attempts[]` (каждая попытка с маршрутом и пометкой) |
+| stdout `search.php` | JSON: `results[]` (`title`, `url`, `snippet`), `route`, `status` |
+
+## Зависимости
+
+PHP 8.4+ с расширением `curl` (`php -m | grep curl`). Без composer-зависимостей
+и без внешних skills: общий клиент `WrfClient.php` лежит внутри репо.
 
 ## Установка
 
+Skill совместим с различными AI-агентами. Примеры ниже — для каталога
+`.agents/skills`; для других инструментов смотрите их документацию по установке skills.
+
 ```bash
+# Клон в каталог skills проекта
 git clone https://github.com/prikotov/web-research-fallback.git .agents/skills/web-research-fallback
-# или симлинк на существующий клон (в любом проекте):
+
+# Или симлинк на существующий клон (в любом проекте)
 ln -s /home/dp/MyProjects/web-research-fallback .agents/skills/web-research-fallback
-# общий каталог скиллов нескольких проектов:
+
+# Общий каталог скиллов нескольких проектов
 ln -s /home/dp/MyProjects/web-research-fallback /home/dp/MyProjects/.ai_sync/.agents/skills/web-research-fallback
 ```
 
-## Настройка прокси (собственный конфиг скилла)
+## Использование
+
+### Напрямую через PHP
+
+```bash
+# Проверить страницу: цепочка сама выберет маршрут, тело — в /tmp
+php scripts/fetch.php https://www.youtube.com/
+
+# Сохранить тело для разбора в конкретный файл
+php scripts/fetch.php https://example.com/article --out /tmp/article.html
+
+# Медленный сайт: больше времени на попытку
+php scripts/fetch.php https://example.com/ --timeout 40
+
+# Только direct+прокси, без архива
+php scripts/fetch.php https://example.com/ --no-wayback
+
+# Эмуляция машины без российских CA (direct даст errno 60, сработает direct-ruca)
+php scripts/fetch.php https://www.sberbank.ru/ --ca foreign-only.pem
+
+# Найти источники по теме
+php scripts/search.php "moex retail investors share 2021"
+
+# Больше кандидатов для каталогизации
+php scripts/search.php "объем торгов акциями вторичный рынок" --limit 20
+```
+
+### Параметры
+
+| Опция | Скрипт | Описание | По умолчанию |
+|-------|--------|----------|--------------|
+| `URL` | fetch | Позиционный, обязательный: что проверяем | — |
+| `--out` | fetch | Куда сохранить тело | `/tmp/wrf_<hash>.html` |
+| `--timeout` | fetch | Секунд на попытку | 20 (вариации URL — 12) |
+| `--no-wayback` | fetch | Не ходить в Wayback | выключено |
+| `--ca` | fetch | Свой CA-бандл для обычных маршрутов | системный trust store |
+| `--proxy` | оба | Прокси явно, поверх env и конфига | из env/конфига |
+| `"запрос"` | search | Позиционный, обязательный: формулировка как для поисковика | — |
+| `--limit` | search | Сколько результатов вернуть | 10 |
+
+### Через агента
+
+После установки skill агент автоматически узнаёт о нём. Примеры запросов:
+
+```
+Страница не открывается — проверь источник и скажи, каким маршрутом взял тело
+```
+
+```
+Найди источники про долю физлиц в объёме торгов Мосбиржи
+```
+
+```
+Проверь утверждение статьи по первоисточнику; если сайт заблокирован — через архив
+```
+
+## Результаты
+
+Тело страницы сохраняется в файл, отчёт печатается в stdout:
+
+```
+/tmp/wrf_3f2a9c01b7.html          # тело страницы (--out или дефолтный /tmp-файл)
+stdout: {"ok": true, "route": "proxy", "status": 200, "bytes": 973149,
+         "out": "/tmp/wrf_3f2a9c01b7.html", "attempts": […]}
+```
+
+Код выхода: 0 — тело получено, 1 — все маршруты мимо. Предупреждения
+(например, пополнение .gitignore) идут в stderr, не в отчёт. Секретов
+в отчётах нет: только имена маршрутов и `proxy_available` / `ru_ca_available`.
+
+## Конфиг и секреты
 
 ```bash
 cp .wrf_config.example.json .wrf_config.json   # в корне репо
@@ -41,18 +126,6 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
 `.gitignore` того репо/каталога, где он лежит (включая случай, когда скилл
 скопирован внутрь чужого репо): не закрыт — запись добавляется автоматически,
 в stderr — предупреждение. Приём из `Ga4Client.php` (google-analytics-core).
-
-## Использование
-
-```bash
-php scripts/fetch.php https://example.com/article --out /tmp/a.html
-# {"ok": true, "route": "proxy", "status": 200, "bytes": …, "attempts": […]}
-php scripts/search.php "moex retail investors share 2021" --limit 8
-```
-
-`fetch.php` сам проходит цепочку и печатает JSON-отчёт с маршрутами попыток
-(без секретов); тело сохраняет в `--out` или `/tmp/wrf_<hash>.html`.
-`search.php` — JSON-список результатов ddg lite.
 
 ## Как устроена цепочка доступа
 
@@ -95,8 +168,13 @@ php scripts/search.php "moex retail investors share 2021" --limit 8
 ## Правила
 
 - Не выводить прокси/токены в stdout, логи, файлы, отчёты; никаких `curl -v` с прокси.
+- Не отключать проверку сертификатов (`-k`): TLS-отказ лечит `direct-ruca`.
 - Не обходить подписки/авторизацию; Wayback — публичный архив.
 - Rate limit уважать; временные файлы — в `/tmp`.
 - «Не проверено» фиксировать явно; сниппет поисковика не выдавать за факт.
 
 Подробнее — [SKILL.md](SKILL.md), маршруты и кейсы — [references/routes.md](references/routes.md).
+
+---
+
+> Постановка задач, архитектура, ревью — [Dmitry Prikotov](https://prikotov.pro/), реализация — Qwen4-Max в [pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent)
