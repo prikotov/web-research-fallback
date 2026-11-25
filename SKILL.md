@@ -13,8 +13,8 @@ license: MIT
 
 ## Скрипты
 
-Пути ниже — от корня репо скилла; из проекта-потребителя вызов идёт через
-симлинк, например `php .agents/skills/web-research-fallback/scripts/fetch.php …`.
+Пути ниже — от корня каталога скилла, куда бы он ни был установлен
+(варианты установки — в README).
 
 ### fetch.php — `scripts/fetch.php`
 
