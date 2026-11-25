@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * fetch.php — цепочка доступа: direct → вариации → прокси → Wayback.
+ * fetch.php — перебор способов доступа: direct → вариации → прокси → Wayback.
  *
  *   php scripts/fetch.php URL [--out FILE] [--proxy URL] [--timeout 20] [--no-wayback]
  *

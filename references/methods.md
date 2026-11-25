@@ -9,9 +9,9 @@
 | eutils.ncbi.nlm.nih.gov | 200 | — | — | |
 | lite.duckduckgo.com/lite/ POST q= | 200 | 200 | — | html.duckduckgo.com/html/ GET — пусто |
 | finam.ru | 403 (research UA) / **200 (browser UA)** | 403 (research UA) | 200 | фильтр по UA, не гео; Wayback+прокси (cp1251) — запасной способ |
-| singjupost.com | timeout | read timeout/502 | 200 (2022-12-09, через прокси) | пример полной цепочки |
+| singjupost.com | timeout | read timeout/502 | 200 (2022-12-09, через прокси) | пример полного перебора способов |
 | scribd.com | JS-challenge | JS-challenge | пробовать | не вышло — «не проверено» |
-| archive.ph / archive.today | 000 | 000 | — | из РФ недоступен оба способа (2026-11-25); в цепочку не добавлен |
+| archive.ph / archive.today | 000 | 000 | — | из РФ недоступен оба способа (2026-11-25); в перебор не добавлен |
 | sberbank.ru / gosuslugi.ru / digital.gov.ru | 200 на машине с российскими CA в trust; errno 60 без них | не лечит (доверие локальное) | 200 | сертификаты НУЦ Минцифры; шаг direct-ruca с бандлом скилла |
 
 ## Кейс: Reuters 29.07.2021 о нерезидентах на Мосбирже
@@ -79,7 +79,7 @@ Chrome-способ включается автоматически при по�
 - 429 — rate limit: пауза; прокси меняет IP; Wayback для архивных копий.
 - 502 через прокси — прокси не достучался до origin; http-вариант, другой способ.
 - JS-challenge — тело содержит «Just a moment»/«Client Challenge»; fetch.php
-  считает такой 200 неуспехом и продолжает цепочку.
+  считает такой 200 неуспехом и продолжает перебор способов.
 - Сетевые errno curl 6 (DNS), 7 (connect), 28 (timeout) — признак блокировки
   способа, а не сайта: fetch.php пропускает вариации и идёт сразу в прокси.
   HTTP-отказы (403/429/5xx) — наоборот, сначала браузерный UA и смена схемы.

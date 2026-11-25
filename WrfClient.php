@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * WrfClient — общий клиент web-research-fallback (цепочка доступа к недоступным сайтам).
+ * WrfClient — общий клиент web-research-fallback (перебор способов доступа к недоступным сайтам).
  *
  * PHP 8.4+, ext-curl, без composer-зависимостей (как Ga4Client.php).
  * Секреты: прокси только из рантайма (--proxy / env WEB_RESEARCH_PROXY /
