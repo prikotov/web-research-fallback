@@ -10,7 +10,7 @@
 - **Не сдаваться после первой ошибки** — timeout, 403, 429, JS-challenge это свойство маршрута, а не приговор источнику
 - **Проверять источник, а не сниппет** — тело страницы берётся цепочкой маршрутов, маршрут и дата фиксируются в отчёте
 - **Работать из России** — исходящие блокировки, гео-фильтры по IP, фильтры по UA, сертификаты НУЦ Минцифры
-- **Набирать материалы по теме** — поиск источников, когда адрес неизвестен
+- **Набирать материалы по теме** — поиск источников через lite.duckduckgo
 
 ## Что вы получите
 
@@ -35,10 +35,10 @@ Skill совместим с различными AI-агентами. Приме
 git clone https://github.com/prikotov/web-research-fallback.git .agents/skills/web-research-fallback
 
 # Или симлинк на существующий клон (в любом проекте)
-ln -s /home/dp/MyProjects/web-research-fallback .agents/skills/web-research-fallback
+ln -s /path/to/web-research-fallback .agents/skills/web-research-fallback
 
 # Общий каталог скиллов нескольких проектов
-ln -s /home/dp/MyProjects/web-research-fallback /home/dp/MyProjects/.ai_sync/.agents/skills/web-research-fallback
+ln -s /path/to/web-research-fallback /path/to/shared/skills/web-research-fallback
 ```
 
 ## Использование
@@ -130,8 +130,7 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
 
 ## Как устроена цепочка доступа
 
-Порядок маршрутов `fetch.php` (агенту знать его не нужно — скрипт проходит
-цепочку сам и возвращает отчёт с `attempts`; раздел для понимания и отладки):
+Порядок маршрутов `fetch.php` (раздел для понимания и отладки):
 
 1. **direct.** Сетевая ошибка (DNS/connect/timeout — типично для исходящих
    блокировок из РФ) → вариации пропускаем, сразу прокси: тот же маршрут и IP,
@@ -157,14 +156,16 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
 российского УЦ; дефолтный trust store их не знает → curl errno 60.
 В скилле лежит публичный бандл `references/russian-trusted-ca.pem`
 (корневой + промежуточный CA): шаг цепочки `direct-ruca` использует его
-через CURLOPT_CAINFO. Прокси TLS-недоверие не лечит (проверка локальная).
+через CURLOPT_CAINFO.
 
 Происхождение бандла (2026-11-25): зеркала github.com/AKotov-dev/russiancrt
 и github.com/umatrix81/certsru; SHA256 корневого сертификата сверен между
 зеркалами: `D2:6D:2D:02:31:B7:C3:9F:92:CC:73:85:12:BA:54:10:35:19:E4:40:5D:68:B5:BD:70:3E:97:88:CA:8E:CF:31`.
 Официальные инструкции по установке в систему: https://www.sberbank.ru/ru/certificates.
 Проверка сценария «чистая машина»: `php scripts/fetch.php URL --ca foreign-only.pem`
-(direct даст errno 60, direct-ruca — 200).
+(direct даст errno 60, direct-ruca — 200). `foreign-only.pem` — бандл без
+российских CA: например, один иностранный корень, вырезанный из системного
+ca-certificates.crt.
 
 ## Правила
 

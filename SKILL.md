@@ -11,6 +11,14 @@ license: MIT
 отчёт, фиксирует маршрут и дату в карточке источника и решает, что делать
 дальше. Установка, требования и устройство клиента — в README.md.
 
+## Когда использовать
+
+Сайт не отвечает при исследовании: connect/read timeout, HTTP 000/403/502/429,
+JS-challenge («Just a moment», «Client Challenge»). Не делай вывод «источник
+недоступен» после первой попытки — пройди цепочку (скрипт делает её сам).
+Доступность конкретных хостов из конкретной сети (проверено, с датами) —
+`references/routes.md`; на другой сети картина может отличаться.
+
 ## Скрипты
 
 Пути ниже — от корня каталога скилла.
@@ -43,7 +51,7 @@ php scripts/fetch.php URL [опции]
 
 ```bash
 # Проверить статью и сохранить тело для разбора
-php scripts/fetch.php https://www.finam.ru/... --out /tmp/finam.html
+php scripts/fetch.php https://www.finam.ru/ --out /tmp/finam.html
 
 # Медленный сайт: больше времени на попытку
 php scripts/fetch.php https://example.com/ --timeout 40
@@ -66,7 +74,7 @@ php scripts/fetch.php https://www.youtube.com/
 | Поле | Описание |
 |------|----------|
 | `ok` | Получено ли тело (200 без JS-challenge) |
-| `route` | Каким маршрутом взято: direct / direct-variant-N / proxy / wayback… |
+| `route` | Каким маршрутом взято: direct / direct-browser / direct-ruca / proxy / wayback и их вариации |
 | `status`, `bytes` | HTTP-статус и размер тела |
 | `out` | Путь к сохранённому телу |
 | `final_url` | Итоговый адрес после редиректов (для цитирования) |
@@ -132,14 +140,6 @@ stdout — JSON:
 скилла `.wrf_config.json` (путь можно задать через `WRF_CONFIG`); настройка —
 в README. Значение прокси не выводится ни в stdout, ни в отчёты, ни в файлы;
 в отчётах только имена маршрутов и `proxy_available`.
-
-## Когда использовать
-
-Сайт не отвечает при исследовании: connect/read timeout, HTTP 000/403/502/429,
-JS-challenge («Just a moment», «Client Challenge»). Не делай вывод «источник
-недоступен» после первой попытки — пройди цепочку (скрипт делает её сам).
-Доступность конкретных хостов из конкретной сети (проверено, с датами) —
-`references/routes.md`; на другой сети картина может отличаться.
 
 ## Безопасность
 
