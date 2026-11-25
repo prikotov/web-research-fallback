@@ -83,9 +83,6 @@ php scripts/fetch.php https://example.com/ --timeout 40
 
 # Только direct+прокси, без архива
 php scripts/fetch.php https://example.com/ --no-wayback
-
-# Сайт вне карты FEEDS: явная лента для шага feed
-php scripts/fetch.php https://example.com/article --feed https://example.com/rss.xml
 ```
 
 #### Параметры fetch.php
@@ -96,7 +93,6 @@ php scripts/fetch.php https://example.com/article --feed https://example.com/rss
 | `--out` | Куда сохранить тело | `/tmp/wrf_<hash>.html` |
 | `--timeout` | Секунд на попытку | 20 (вариации URL — 12) |
 | `--no-wayback` | Не ходить в Wayback | выключено |
-| `--feed` | Явная RSS/Atom-лента для шага feed | из карты FEEDS по хосту |
 | `--no-chrome` | Не ходить в headless Chrome | выключено |
 | `--proxy` | Прокси явно, поверх env и конфига | из env/конфига |
 
@@ -197,15 +193,10 @@ chmod 600 .wrf_config.json
 6. **jina reader** (r.jina.ai через прокси): рендерит JS и отдаёт markdown;
    включается при challenge/js-shell/empty body, если chrome не помог или отключён.
    Работает без ключа; из РФ direct = 451, только прокси.
-7. **feed** (опыт news-core): сайт закрыл HTML, но отдаёт RSS/Atom для
-   агрегаторов. Карта известных лент — `WrfClient::FEEDS` (RBC full.rss с полными
-   текстами, Interfax, TASS, RIA, 1prime, Kommersant); ищется item со ссылкой на
-   целевой URL, тело = XML item. Явная лента — `--feed`. Лента ходит с системным
-   trust, затем через прокси.
-8. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
+7. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
    (обычно direct) → снапшот direct → при 429 снапшот через прокси.
    Пагинация и `?singlepage=1` — внутри снапшота.
-9. **archive.today в переборе нет**: из РФ недоступен и direct, и через прокси
+8. **archive.today в переборе нет**: из РФ недоступен и direct, и через прокси
    (проверено 2026-11-25, оба 000).
 
 ## Российские CA (сертификаты НУЦ Минцифры)

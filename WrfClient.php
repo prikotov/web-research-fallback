@@ -30,15 +30,6 @@ final class WrfClient
         'sec-ch-ua-mobile' => '?0',
         'sec-ch-ua-platform' => '"Windows"',
     ];
-    /** RSS/Atom-экспорты сайтов, которые закрывают HTML (опыт news-core). */
-    public const FEEDS = [
-        'rbc.ru' => 'https://rssexport.rbc.ru/rbcnews/news/30/full.rss',
-        'interfax.ru' => 'https://www.interfax.ru/rss.asp',
-        'tass.ru' => 'https://tass.ru/rss/v2.xml',
-        'kommersant.ru' => 'https://www.kommersant.ru/RSS/news.xml',
-        'ria.ru' => 'https://ria.ru/export/rss2/archive/index.xml',
-        '1prime.ru' => 'https://1prime.ru/export/rss2/archive/index.xml',
-    ];
     public const CONFIG_NAME = '.wrf_config.json';
     /** Официальная страница установки сертификатов НУЦ Минцифры (Госуслуги —
      *  портал Минцифры). Бандл в репо не вендорим: у сертификатов есть срок
@@ -286,42 +277,6 @@ final class WrfClient
             }
         }
         return ['results' => array_slice($out, 0, $limit), 'status' => 200, 'note' => ''];
-    }
-
-    /** Feed-способ: сайт закрыл HTML, но отдаёт RSS/Atom (опыт news-core).
-     *  Ищет item со ссылкой на целевой URL; тело = XML item (в т.ч. полный текст). */
-    public static function feedFor(string $url): ?string
-    {
-        $host = (string)parse_url($url, PHP_URL_HOST);
-        $host = preg_replace('/^www\./', '', $host);
-        return self::FEEDS[$host] ?? null;
-    }
-
-    public static function feedItem(string $feedUrl, string $targetUrl, ?string $proxy = null): array
-    {
-        $r = self::fetch($feedUrl, $proxy, self::UA, 25);
-        if ($r['status'] !== 200 || $r['body'] === '') {
-            return ['item' => null, 'status' => $r['status'], 'note' => $r['note']];
-        }
-        $norm = static function (string $u): string {
-            $u = preg_replace('~^https?://~', '', $u);
-            $u = preg_replace('~^www\.~', '', $u);
-            return rtrim($u, '/');
-        };
-        $want = $norm($targetUrl);
-        try {
-            $xml = new \SimpleXMLElement($r['body']);
-        } catch (\Throwable) {
-            return ['item' => null, 'status' => 200, 'note' => 'feed not xml'];
-        }
-        foreach ($xml->channel->item ?? [] as $item) {
-            $link = $norm((string)$item->link);
-            $guid = $norm((string)$item->guid);
-            if ($link === $want || $guid === $want) {
-                return ['item' => ['body' => $item->asXML(), 'link' => (string)$item->link, 'feed' => $feedUrl], 'status' => 200, 'note' => ''];
-            }
-        }
-        return ['item' => null, 'status' => 200, 'note' => 'no item for url'];
     }
 
     /** Brave Search API: свой индекс, JSON, ключ X-Subscription-Token. */

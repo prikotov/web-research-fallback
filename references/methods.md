@@ -9,7 +9,7 @@
 | eutils.ncbi.nlm.nih.gov | 200 | — | — | |
 | lite.duckduckgo.com/lite/ POST q= | 200 | 200 | — | html.duckduckgo.com/html/ GET — пусто |
 | finam.ru | 403 (research UA); challenge (browser UA, перепроверено 2026-11-25) | challenge | 200 через chrome | WAF меняется: раньше хватало browser UA, теперь нужен chrome |
-| rbc.ru | 200 с пустым телом для ботов | 200 через chrome | feed, пока item в топ-30 ленты | пустое тело триггерит chrome; `--virtual-time-budget` ломает RBC (0 байт) — не используем |
+| rbc.ru | 200 с пустым телом для ботов | 200 через chrome | — | пустое тело триггерит chrome; `--virtual-time-budget` ломает RBC (0 байт) — не используем |
 | singjupost.com | timeout | read timeout/502 | 200 (2022-12-09, через прокси) | пример полного перебора способов |
 | scribd.com | JS-challenge | JS-challenge | пробовать | не вышло — «не проверено» |
 | archive.ph / archive.today | 000 | 000 | — | из РФ недоступен оба способа (2026-11-25); в перебор не добавлен |
@@ -38,20 +38,6 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 | ya.ru / yandex.ru/search | SmartCaptcha даже через headless Chrome | нет: captcha боту, обход запрещён |
 | go.mail.ru/search | 200, JS-оболочка 1.8 КБ; через Chrome — оболочка авторизации | нет: результатов нет |
 
-## Feed-экспорты (проверено 2026-11-25; карта — WrfClient::FEEDS, опыт news-core)
-
-| Лента | Статус | Примечание |
-|---|---|---|
-| rssexport.rbc.ru/rbcnews/news/30/full.rss | 200 | полные тексты статей; шаг feed берёт XML item |
-| tass.ru/rss/v2.xml | 200 | |
-| ria.ru/export/rss2/archive/index.xml | 200 | |
-| interfax.ru/rss.asp | 301 → 200 | редирект следует сам |
-| kommersant.ru/RSS/news.xml | 301 → 200 | редирект следует сам |
-| 1prime.ru/export/rss2/archive/index.xml | из news-core | сегодня не перепроверялась |
-
-HTML этих сайтов с браузерным UA и заголовками из РФ — 200 (отказы ситуативны:
-datacenter-IP, настроение WAF); feed-способ — запасной путь и источник полных текстов.
-
 ## JS-challenge и headless Chrome (проверено 2026-11-25)
 
 | Сайт | curl/browser-UA | headless Chrome | Примечание |
@@ -63,6 +49,8 @@ datacenter-IP, настроение WAF); feed-способ — запасной
 
 Вывод: эмуляция Chrome открывает контент-сайты (TASS), но не поисковики:
 google прячет URL, yandex требует captcha, mail — авторизацию.
+Feed-экспорты (RSS/Atom) проверены как способ и удалены: покрывают только свежие
+item топ-30 лент и дублируют chrome.
 
 Chrome-способ включается автоматически при пометках challenge/js-shell в attempts;
 `--no-chrome` отключает. Авторизованный прокси chrome не поддерживает.

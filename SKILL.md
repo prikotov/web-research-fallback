@@ -40,7 +40,6 @@ php scripts/fetch.php URL [опции]
 | `--proxy` | Прокси явно, поверх env и конфига | URL прокси | из env/конфига |
 | `--timeout` | Секунд на попытку | число | 20 (вариации URL — 12) |
 | `--no-wayback` | Не ходить в Wayback | флаг | выключено |
-| `--feed` | Явная RSS/Atom-лента для шага feed (сайт вне карты FEEDS) | URL ленты | из карты FEEDS по хосту |
 | `--no-chrome` | Не ходить в headless Chrome | флаг | выключено |
 
 #### Примеры
@@ -70,7 +69,7 @@ php scripts/fetch.php https://www.finam.ru/publications/item/dolya-fizlits-v-bir
 | Поле | Описание |
 |------|----------|
 | `ok` | Получено ли тело (200 без JS-challenge) |
-| `method` | Каким способом взято: direct / direct-browser / proxy / chrome / feed / wayback и их вариации |
+| `method` | Каким способом взято: direct / direct-browser / proxy / chrome / wayback и их вариации |
 | `status`, `bytes` | HTTP-статус и размер тела |
 | `out` | Путь к сохранённому телу |
 | `final_url` | Итоговый адрес после редиректов (для цитирования) |
@@ -79,8 +78,6 @@ php scripts/fetch.php https://www.finam.ru/publications/item/dolya-fizlits-v-bir
 | `attempts[]` | Каждая попытка: method, status, note (`challenge`, `curl errno N`, `no snapshot`) |
 
 - Код выхода: 0 — тело получено, 1 — все способы мимо.
-- `method=feed`: тело — XML item ленты (заголовок, ссылка, дата, текст статьи),
-  `final_url` — адрес ленты; статью цитировать по `link` item, не по ленте.
 - `method=chrome` / `method=jina`: тело получено рендером (браузер или reader);
   у jina тело — markdown, разбирать как markdown, не как HTML.
 - `ok=false` не значит «источника нет»: смотри `attempts` (где сломалось) и

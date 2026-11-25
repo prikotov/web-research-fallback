@@ -103,22 +103,6 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
             }
         }
     }
-    // Feed-способ (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.
-    if ($result === null) {
-        $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);
-        if ($feedUrl !== null) {
-            $fi = WrfClient::feedItem($feedUrl, $url);
-            if ($fi['item'] === null && $proxy !== null) {
-                $fi = WrfClient::feedItem($feedUrl, $url, $proxy);
-            }
-            if ($fi['item'] !== null) {
-                $attempts[] = ['method' => 'feed', 'status' => 200, 'note' => 'item: ' . $fi['item']['link']];
-                $result = ['method' => 'feed', 'status' => 200, 'bytes' => strlen($fi['item']['body']), 'body' => $fi['item']['body'], 'url' => $fi['item']['feed']];
-            } else {
-                $attempts[] = ['method' => 'feed', 'status' => $fi['status'], 'note' => $fi['note']];
-            }
-        }
-    }
     if ($result === null && !isset($opt['no-wayback'])) {
         $snap = WrfClient::waybackSnapshot($url);
         if ($snap !== null) {
