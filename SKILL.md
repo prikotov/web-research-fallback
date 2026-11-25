@@ -18,7 +18,8 @@ license: MIT
 ### fetch.php — `scripts/fetch.php`
 
 Достаёт тело недоступного URL, сам проходя цепочку маршрутов
-(direct → вариации UA/схемы/www → прокси → Wayback). Тело сохраняет в файл,
+(direct → браузерный UA и смена схемы при HTTP-отказе → прокси → Wayback;
+при сетевой ошибке — сразу прокси). Тело сохраняет в файл,
 в stdout печатает JSON-отчёт о маршрутах и попытках.
 
 #### Запуск
@@ -67,6 +68,7 @@ php scripts/fetch.php https://www.youtube.com/
 | `route` | Каким маршрутом взято: direct / direct-variant-N / proxy / wayback… |
 | `status`, `bytes` | HTTP-статус и размер тела |
 | `out` | Путь к сохранённому телу |
+| `final_url` | Итоговый адрес после редиректов (для цитирования) |
 | `proxy_available` | Был ли прокси в рантайме |
 | `attempts[]` | Каждая попытка: route, status, note (`challenge`, `curl errno N`, `no snapshot`) |
 
@@ -135,23 +137,28 @@ JS-challenge («Just a moment», «Client Challenge»). Не делай выво
 
 ## Цепочка доступа (порядок)
 
-1. **Диагностируй ошибку.** Различай connect timeout (сеть/блокировка), read
-   timeout (сервер молчит), 403 (блок/гео), 429 (rate limit), 502 (прокси не
-   достучался до origin). 🔴 Никогда `curl -v` с прокси: debug печатает URL
-   прокси с учётными данными.
-2. **Повтори напрямую с вариациями:** браузерный UA, http/https, www/без www,
-   timeout до 45–60 с.
-3. **Повтори через прокси** (меняет exit IP: гео-блоки и 429 по IP). Пробуй
-   https и http через прокси.
-4. **Сайт мёртв на обоих маршрутах → Wayback:** `archive.org/wayback/available`
-   (обычно direct), CDX `web.archive.org/cdx/search/cdx?url=…&filter=statuscode:200`,
-   снапшот `web.archive.org/web/<ts>/<URL>`; при 429 — через прокси. Пагинацию
-   и `?singlepage=1` проверяй внутри снапшота.
-5. **JS-challenge (Scribd и т.п.):** Wayback; не вышло — статус «не проверено»,
+Что `fetch.php` делает автоматически; вручную — в том же порядке.
+
+1. **direct.** Сетевая ошибка (DNS/connect/timeout — типично для исходящих
+   блокировок из РФ) → вариации пропускаем, сразу прокси: тот же маршрут и IP,
+   вариации UA/схемы там бессмысленны и только жгут время.
+2. **HTTP-отказ (403/429/5xx/JS-challenge)** → direct с браузерным UA
+   (WAF фильтрует по UA), затем смена схемы http↔https (legacy-сайты без TLS).
+   www-вариант не нужен: редиректы www скрипт следует сам.
+3. **proxy** (браузерный UA) — меняет exit IP: гео-блоки и 429 по IP.
+   HTTP-отказ через прокси → смена схемы через прокси.
+4. **Wayback**, если мёртв на обоих маршрутах: `archive.org/wayback/available`
+   (обычно direct) → снапшот direct → при 429 снапшот через прокси.
+   Пагинацию и `?singlepage=1` проверяй внутри снапшота.
+5. **archive.today в цепочке нет**: из РФ недоступен и direct, и через прокси
+   (проверено 2026-11-25, оба 000).
+6. **JS-challenge (Scribd и т.п.):** Wayback; не вышло — статус «не проверено»,
    содержимое не додумывать.
-6. **Зафиксируй маршрут и дату** в карточке источника/отчёте проекта: что
+7. **Зафиксируй маршрут и дату** в карточке источника/отчёте проекта: что
    пробовал, итог «проверено (маршрут, снапшот)» или «не проверено». Отсутствие
    доступа ≠ отсутствие содержимого; сниппет поисковика ≠ проверенный факт.
+
+🔴 Никогда `curl -v` с прокси: debug печатает URL прокси с учётными данными.
 
 ## Безопасность
 
@@ -170,6 +177,7 @@ JS-challenge («Just a moment», «Client Challenge»). Не делай выво
 direct connect timeout, через прокси 200; archive.org API — direct, снапшоты
 могут 429 → прокси; `api.github.com`, `cbr.ru`, `moex.com`,
 `eutils.ncbi.nlm.nih.gov` — direct; `lite.duckduckgo.com/lite/` POST — direct
-работает, `html.duckduckgo.com/html/` GET — пусто; finam.ru — 403/JS-challenge,
-Reuters-перепечатки доступны через Wayback+прокси (cp1251). Подробности и
+работает, `html.duckduckgo.com/html/` GET — пусто; finam.ru — 403 с research UA,
+200 с браузерным UA (проверено 2026-11-25); Wayback+прокси (cp1251) — запасной
+маршрут для перепечаток. Подробности и
 маршруты кейсов — `references/routes.md`.

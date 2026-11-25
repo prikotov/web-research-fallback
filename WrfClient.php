@@ -115,13 +115,14 @@ final class WrfClient
         }
         $body = curl_exec($ch);
         $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $effective = (string)curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         $errno = curl_errno($ch);
         curl_close($ch);
         if ($body === false) {
             // сообщение curl может содержать адрес прокси — в отчёт только errno
-            return ['body' => '', 'status' => 0, 'note' => 'curl errno ' . $errno];
+            return ['body' => '', 'status' => 0, 'note' => 'curl errno ' . $errno, 'url' => $url];
         }
-        return ['body' => (string)$body, 'status' => $status, 'note' => $status === 0 ? 'curl errno ' . $errno : ''];
+        return ['body' => (string)$body, 'status' => $status, 'note' => $status === 0 ? 'curl errno ' . $errno : '', 'url' => $effective];
     }
 
     public static function isChallenge(string $body): bool
@@ -135,20 +136,23 @@ final class WrfClient
         return false;
     }
 
-    /** http/https и www/без www — для повторных попыток. */
+    /** Смена схемы http/https: legacy-сайты только по http или битый TLS.
+     *  www-вариант не нужен: CURLOPT_FOLLOWLOCATION сам следует редиректам www. */
     public static function urlVariants(string $url): array
     {
-        if (!preg_match('~^(https?)://(www\.)?(.*)$~', $url, $m)) {
+        if (!preg_match('~^(https?)://(.*)$~', $url, $m)) {
             return [];
         }
-        [, $scheme, $www, $rest] = $m;
+        [, $scheme, $rest] = $m;
         $other = $scheme === 'https' ? 'http' : 'https';
-        $flip = $www === '' ? 'www.' : '';
-        return [
-            "$other://{$www}{$rest}",
-            "$scheme://{$flip}{$rest}",
-            "$other://{$flip}{$rest}",
-        ];
+        return ["$other://{$rest}"];
+    }
+
+    /** Сетевая ошибка (DNS/connect/timeout): типична для исходящих блокировок из РФ;
+     *  вариации UA/схемы на том же маршруте бессмысленны — сразу прокси. */
+    public static function isNetworkError(string $note): bool
+    {
+        return (bool)preg_match('/curl errno (6|7|28)\b/', $note);
     }
 
     /** Ближайший снапшот Wayback (API обычно доступен напрямую). */

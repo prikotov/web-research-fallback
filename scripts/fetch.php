@@ -30,22 +30,34 @@ $try = function (string $route, string $u, bool $useProxy = false, string $ua = 
     $challenge = WrfClient::isChallenge($r['body']);
     $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : $r['note']];
     if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge) {
-        $result = ['route' => $route, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body']];
+        $result = ['route' => $route, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body'], 'url' => $r['url']];
     }
     return $result !== null;
 };
 
+$lastNote = static function () use (&$attempts): string {
+    return (string)end($attempts)['note'];
+};
+
 if (!$try('direct', $url)) {
-    foreach (WrfClient::urlVariants($url) as $i => $v) {
-        if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout))) {
-            break;
+    // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
+    // вариации на том же маршруте бессмысленны: сразу прокси.
+    if (!WrfClient::isNetworkError($lastNote())) {
+        if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout))) {
+            foreach (WrfClient::urlVariants($url) as $i => $v) {
+                if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout))) {
+                    break;
+                }
+            }
         }
     }
     if ($result === null && $proxy !== null) {
-        if (!$try('proxy', $url, true)) {
-            foreach (WrfClient::urlVariants($url) as $i => $v) {
-                if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout))) {
-                    break;
+        if (!$try('proxy', $url, true, WrfClient::UA_BROWSER)) {
+            if (!WrfClient::isNetworkError($lastNote())) {
+                foreach (WrfClient::urlVariants($url) as $i => $v) {
+                    if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout))) {
+                        break;
+                    }
                 }
             }
         }
@@ -74,6 +86,7 @@ WrfClient::emit([
     'status' => $result['status'] ?? null,
     'bytes' => $result['bytes'] ?? 0,
     'out' => $out,
+    'final_url' => $result['url'] ?? null,
     'proxy_available' => $proxy !== null,
     'attempts' => $attempts,
 ]);
