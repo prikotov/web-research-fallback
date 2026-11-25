@@ -140,10 +140,8 @@ google/yandex/mail.ru не используем: enablejs, captcha и оболо
 ```
 
 ```
-Статья Finam «Доля физлиц в биржевых торгах акциями в октябре составила 69%»
-отдаёт ботам пустое тело, а в браузере открывается:
-https://www.finam.ru/publications/item/dolya-fizlits-v-birzhevykh-torgakh-aktsiyami-v-oktyabre-sostavila-69-20251110-2119/
-Достань её текст и проверь цифру по данным Мосбиржи или ЦБ — факт или нет.
+У меня в браузере открывается — https://www.rbc.ru/rbcfreenews/6b067c5c4a4bff1cbe0b2a6a
+Если не открывается у тебя, это косяк. Реши.
 ```
 
 ## Результаты
