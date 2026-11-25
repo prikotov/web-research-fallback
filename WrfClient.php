@@ -31,9 +31,7 @@ final class WrfClient
         'sec-ch-ua-platform' => '"Windows"',
     ];
     public const CONFIG_NAME = '.wrf_config.json';
-    /** Официальная страница установки сертификатов НУЦ Минцифры (Госуслуги —
-     *  портал Минцифры). Бандл в репо не вендорим: у сертификатов есть срок
-     *  жизни (root до 2032-02-27, sub до 2027-03-06), доверие — системное. */
+    /** Официальная страница установки сертификатов НУЦ Минцифры (Госуслуги — портал Минцифры). */
     public const RU_CA_INSTALL_URL = 'https://www.gosuslugi.ru/crt';
     private const CHALLENGE_MARKERS = ['just a moment', 'client challenge', 'checking your browser', 'enable javascript and cookies', 'access denied', 'enablejs', 'js-challenge-loader', 'servicepipe.tech'];
 
