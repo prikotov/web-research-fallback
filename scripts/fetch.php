@@ -22,7 +22,6 @@ $timeout = (int)($opt['timeout'] ?? 20);
 WrfClient::ensureConfigIgnored();
 $proxy = WrfClient::loadProxy(isset($opt['proxy']) ? (string)$opt['proxy'] : null);
 $caOpt = isset($opt['ca']) ? (string)$opt['ca'] : null;
-$ruCa = is_file(WrfClient::RU_CA) ? WrfClient::RU_CA : null;
 
 $attempts = [];
 $result = null;
@@ -44,10 +43,9 @@ $lastNote = static function () use (&$attempts): string {
 
 if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
     if (WrfClient::isTlsError($lastNote())) {
-        // Сертификаты НУЦ Минцифры: лечим бандлом российских CA, не прокси.
-        if ($ruCa === null || !$try('direct-ruca', $url, false, WrfClient::UA_BROWSER, null, $ruCa)) {
-            $attempts[] = ['method' => 'proxy', 'status' => null, 'note' => 'skipped: TLS-доверие локальное, прокси не лечит'];
-        }
+        // Сертификаты НУЦ Минцифры: доверие локальное, прокси не лечит.
+        // Причина и официальная ссылка установки — в hint отчёта.
+        $attempts[] = ['method' => 'proxy', 'status' => null, 'note' => 'skipped: TLS-доверие локальное, прокси не лечит'];
     } else {
         // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
         // вариации на том же способе бессмысленны: сразу прокси.
@@ -92,9 +90,6 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
         $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);
         if ($feedUrl !== null) {
             $fi = WrfClient::feedItem($feedUrl, $url, null, null);
-            if ($fi['item'] === null && $ruCa !== null && WrfClient::isTlsError($fi['note'])) {
-                $fi = WrfClient::feedItem($feedUrl, $url, null, $ruCa);
-            }
             if ($fi['item'] === null && $proxy !== null) {
                 $fi = WrfClient::feedItem($feedUrl, $url, $proxy, null);
             }
@@ -123,6 +118,14 @@ if ($result !== null) {
     $out = isset($opt['out']) ? (string)$opt['out'] : '/tmp/wrf_' . substr(md5($url), 0, 10) . '.html';
     file_put_contents($out, $result['body']);
 }
+$hint = null;
+foreach ($attempts as $a) {
+    if (WrfClient::isTlsError((string)$a['note'])) {
+        $hint = 'TLS-отказ: сертификат сайта выпущен НУЦ Минцифры и не входит в системный trust store. '
+            . 'Установите корневой сертификат в систему с официальной страницы: ' . WrfClient::RU_CA_INSTALL_URL;
+        break;
+    }
+}
 WrfClient::emit([
     'url' => $url,
     'ok' => $result !== null,
@@ -132,7 +135,7 @@ WrfClient::emit([
     'out' => $out,
     'final_url' => $result['url'] ?? null,
     'proxy_available' => $proxy !== null,
-    'ru_ca_available' => $ruCa !== null,
+    'hint' => $hint,
     'attempts' => $attempts,
 ]);
 exit($result !== null ? 0 : 1);
