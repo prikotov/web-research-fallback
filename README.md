@@ -191,8 +191,8 @@ chmod 600 .wrf_config.json
    (Win/126 против Linux/146 — challenge фингерпринтит несоответствие).
    Авторизованный прокси chrome не умеет — chrome-proxy не пробуем.
 6. **Сервисы, отдающие тело**: jina reader (`r.jina.ai` через прокси, без ключа)
-   и tavily extract (`api.tavily.com/extract`, ключ в конфиге). Brave тела не отдаёт —
-   только поиск в search.php. Включается при challenge/js-shell/empty body,
+   и tavily extract (`api.tavily.com/extract`, ключ в конфиге).
+   Включается при challenge/js-shell/empty body,
    если chrome не помог или отключён.
    Работает без ключа; из РФ direct = 451, только прокси.
 7. **Wayback**, если мёртв на всех способах: `archive.org/wayback/available`
