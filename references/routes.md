@@ -33,6 +33,20 @@ sources/2026-11-24-reuters-moex-nonresidents-1h2021.md).
 | ya.ru / yandex.ru/search | SmartCaptcha | нет: captcha боту, обход запрещён |
 | go.mail.ru/search | 200, JS-оболочка 1.8 КБ | нет: результатов в HTML нет |
 
+## Feed-экспорты (проверено 2026-11-25; карта — WrfClient::FEEDS, опыт news-core)
+
+| Лента | Статус | Примечание |
+|---|---|---|
+| rssexport.rbc.ru/rbcnews/news/30/full.rss | 200 | полные тексты статей; шаг feed берёт XML item |
+| tass.ru/rss/v2.xml | 200 | |
+| ria.ru/export/rss2/archive/index.xml | 200 | |
+| interfax.ru/rss.asp | 301 → 200 | редирект следует сам |
+| kommersant.ru/RSS/news.xml | 301 → 200 | редирект следует сам |
+| 1prime.ru/export/rss2/archive/index.xml | из news-core | сегодня не перепроверялась |
+
+HTML этих сайтов с браузерным UA и заголовками из РФ — 200 (отказы ситуативны:
+datacenter-IP, настроение WAF); feed-маршрут — запасной путь и источник полных текстов.
+
 ## Диагностика кодов
 
 - 000 / connect timeout — сеть или блокировка маршрута; пробовать прокси.

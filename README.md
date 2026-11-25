@@ -61,6 +61,9 @@ php scripts/fetch.php https://example.com/ --no-wayback
 # Эмуляция машины без российских CA (direct даст errno 60, сработает direct-ruca)
 php scripts/fetch.php https://www.sberbank.ru/ --ca foreign-only.pem
 
+# Сайт вне карты FEEDS: явная лента для шага feed
+php scripts/fetch.php https://example.com/article --feed https://example.com/rss.xml
+
 # Найти источники по теме
 php scripts/search.php "moex retail investors share 2021"
 
@@ -80,6 +83,7 @@ php scripts/search.php "обзор рисков финансовых рынко�
 | `--timeout` | fetch | Секунд на попытку | 20 (вариации URL — 12) |
 | `--no-wayback` | fetch | Не ходить в Wayback | выключено |
 | `--ca` | fetch | Свой CA-бандл для обычных маршрутов | системный trust store |
+| `--feed` | fetch | Явная RSS/Atom-лента для шага feed | из карты FEEDS по хосту |
 | `--proxy` | оба | Прокси явно, поверх env и конфига | из env/конфига |
 | `"запрос"` | search | Позиционный, обязательный: формулировка как для поисковика | — |
 | `--limit` | search | Сколько результатов вернуть | 10 |
@@ -146,12 +150,17 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
    Минцифры, которых нет в дефолтном trust store: direct с бандлом российских
    CA (`references/russian-trusted-ca.pem`, шаг `direct-ruca`). Прокси не лечит:
    доверие к сертификату проверяется локально. Не вышло → Wayback.
-4. **proxy** (браузерный UA) — меняет exit IP: гео-блоки и 429 по IP.
-   HTTP-отказ через прокси → смена схемы через прокси.
-5. **Wayback**, если мёртв на обоих маршрутах: `archive.org/wayback/available`
+4. **proxy** (браузерный UA + полный набор браузерных заголовков) — меняет exit IP:
+   гео-блоки и 429 по IP. HTTP-отказ через прокси → смена схемы через прокси.
+5. **feed** (опыт news-core): сайт закрыл HTML, но отдаёт RSS/Atom для
+   агрегаторов. Карта известных лент — `WrfClient::FEEDS` (RBC full.rss с полными
+   текстами, Interfax, TASS, RIA, 1prime, Kommersant); ищется item со ссылкой на
+   целевой URL, тело = XML item. Явная лента — `--feed`. Лента ходит с системным
+   trust (при TLS-ошибке — с российским бандлом), затем через прокси.
+6. **Wayback**, если мёртв на всех маршрутах: `archive.org/wayback/available`
    (обычно direct) → снапшот direct → при 429 снапшот через прокси.
    Пагинация и `?singlepage=1` — внутри снапшота.
-6. **archive.today в цепочке нет**: из РФ недоступен и direct, и через прокси
+7. **archive.today в цепочке нет**: из РФ недоступен и direct, и через прокси
    (проверено 2026-11-25, оба 000).
 
 ## Российские CA (сертификаты НУЦ Минцифры)

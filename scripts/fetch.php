@@ -27,8 +27,8 @@ $ruCa = is_file(WrfClient::RU_CA) ? WrfClient::RU_CA : null;
 $attempts = [];
 $result = null;
 
-$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null) use (&$attempts, &$result, $proxy, $timeout): bool {
-    $r = WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, [], $ca);
+$try = function (string $route, string $u, bool $useProxy = false, string $ua = WrfClient::UA, ?int $t = null, ?string $ca = null, array $h = []) use (&$attempts, &$result, $proxy, $timeout): bool {
+    $r = WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h, $ca);
     $challenge = WrfClient::isChallenge($r['body']);
     $attempts[] = ['route' => $route, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : $r['note']];
     if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge) {
@@ -51,23 +51,42 @@ if (!$try('direct', $url, false, WrfClient::UA, null, $caOpt)) {
         // Сетевая ошибка (DNS/connect/timeout, типично для блокировок из РФ) —
         // вариации на том же маршруте бессмысленны: сразу прокси.
         if (!WrfClient::isNetworkError($lastNote())) {
-            if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+            if (!$try('direct-browser', $url, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
                 foreach (WrfClient::urlVariants($url) as $i => $v) {
-                    if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+                    if ($try('direct-variant-' . ($i + 1), $v, false, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
                         break;
                     }
                 }
             }
         }
         if ($result === null && $proxy !== null) {
-            if (!$try('proxy', $url, true, WrfClient::UA_BROWSER, null, $caOpt)) {
+            if (!$try('proxy', $url, true, WrfClient::UA_BROWSER, null, $caOpt, WrfClient::BROWSER_HEADERS)) {
                 if (!WrfClient::isNetworkError($lastNote())) {
                     foreach (WrfClient::urlVariants($url) as $i => $v) {
-                        if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt)) {
+                        if ($try('proxy-variant-' . ($i + 1), $v, true, WrfClient::UA_BROWSER, min(12, $timeout), $caOpt, WrfClient::BROWSER_HEADERS)) {
                             break;
                         }
                     }
                 }
+            }
+        }
+    }
+    // Feed-маршрут (опыт news-core): HTML закрыт, но RSS/Atom отдаётся.
+    if ($result === null) {
+        $feedUrl = isset($opt['feed']) ? (string)$opt['feed'] : WrfClient::feedFor($url);
+        if ($feedUrl !== null) {
+            $fi = WrfClient::feedItem($feedUrl, $url, null, null);
+            if ($fi['item'] === null && $ruCa !== null && WrfClient::isTlsError($fi['note'])) {
+                $fi = WrfClient::feedItem($feedUrl, $url, null, $ruCa);
+            }
+            if ($fi['item'] === null && $proxy !== null) {
+                $fi = WrfClient::feedItem($feedUrl, $url, $proxy, null);
+            }
+            if ($fi['item'] !== null) {
+                $attempts[] = ['route' => 'feed', 'status' => 200, 'note' => 'item: ' . $fi['item']['link']];
+                $result = ['route' => 'feed', 'status' => 200, 'bytes' => strlen($fi['item']['body']), 'body' => $fi['item']['body'], 'url' => $fi['item']['feed']];
+            } else {
+                $attempts[] = ['route' => 'feed', 'status' => $fi['status'], 'note' => $fi['note']];
             }
         }
     }

@@ -13,6 +13,28 @@ final class WrfClient
 {
     public const UA = 'Mozilla/5.0 (research; web-research-fallback)';
     public const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+    /** Полный набор заголовков браузера: некоторые WAF смотрят не только на UA. */
+    public const BROWSER_HEADERS = [
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language' => 'ru-RU,ru;q=0.9,en;q=0.8',
+        'Sec-Fetch-Dest' => 'document',
+        'Sec-Fetch-Mode' => 'navigate',
+        'Sec-Fetch-Site' => 'none',
+        'Sec-Fetch-User' => '?1',
+        'Upgrade-Insecure-Requests' => '1',
+        'sec-ch-ua' => '"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="24"',
+        'sec-ch-ua-mobile' => '?0',
+        'sec-ch-ua-platform' => '"Windows"',
+    ];
+    /** RSS/Atom-экспорты сайтов, которые закрывают HTML (опыт news-core). */
+    public const FEEDS = [
+        'rbc.ru' => 'https://rssexport.rbc.ru/rbcnews/news/30/full.rss',
+        'interfax.ru' => 'https://www.interfax.ru/rss.asp',
+        'tass.ru' => 'https://tass.ru/rss/v2.xml',
+        'kommersant.ru' => 'https://www.kommersant.ru/RSS/news.xml',
+        'ria.ru' => 'https://ria.ru/export/rss2/archive/index.xml',
+        '1prime.ru' => 'https://1prime.ru/export/rss2/archive/index.xml',
+    ];
     public const CONFIG_NAME = '.wrf_config.json';
     /** Публичные корневой+промежуточный CA НУЦ Минцифры (не секрет). */
     public const RU_CA = __DIR__ . '/references/russian-trusted-ca.pem';
@@ -203,6 +225,42 @@ final class WrfClient
             }
         }
         return ['results' => array_slice($out, 0, $limit), 'status' => 200, 'note' => ''];
+    }
+
+    /** Feed-маршрут: сайт закрыл HTML, но отдаёт RSS/Atom (опыт news-core).
+     *  Ищет item со ссылкой на целевой URL; тело = XML item (в т.ч. полный текст). */
+    public static function feedFor(string $url): ?string
+    {
+        $host = (string)parse_url($url, PHP_URL_HOST);
+        $host = preg_replace('/^www\./', '', $host);
+        return self::FEEDS[$host] ?? null;
+    }
+
+    public static function feedItem(string $feedUrl, string $targetUrl, ?string $proxy = null, ?string $caInfo = null): array
+    {
+        $r = self::fetch($feedUrl, $proxy, self::UA, 25, null, [], $caInfo);
+        if ($r['status'] !== 200 || $r['body'] === '') {
+            return ['item' => null, 'status' => $r['status'], 'note' => $r['note']];
+        }
+        $norm = static function (string $u): string {
+            $u = preg_replace('~^https?://~', '', $u);
+            $u = preg_replace('~^www\.~', '', $u);
+            return rtrim($u, '/');
+        };
+        $want = $norm($targetUrl);
+        try {
+            $xml = new \SimpleXMLElement($r['body']);
+        } catch (\Throwable) {
+            return ['item' => null, 'status' => 200, 'note' => 'feed not xml'];
+        }
+        foreach ($xml->channel->item ?? [] as $item) {
+            $link = $norm((string)$item->link);
+            $guid = $norm((string)$item->guid);
+            if ($link === $want || $guid === $want) {
+                return ['item' => ['body' => $item->asXML(), 'link' => (string)$item->link, 'feed' => $feedUrl], 'status' => 200, 'note' => ''];
+            }
+        }
+        return ['item' => null, 'status' => 200, 'note' => 'no item for url'];
     }
 
     /** Поиск Bing: серверный HTML, рынок ru-RU обязателен (без него словари).
