@@ -73,7 +73,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
     if ($result === null && !isset($opt['no-chrome'])) {
         $needChrome = false;
         foreach ($attempts as $a) {
-            if (in_array($a['note'], ['challenge', 'js-shell'], true)) {
+            if (in_array($a['note'], ['challenge', 'js-shell', 'empty body'], true)) {
                 $needChrome = true;
                 break;
             }
@@ -88,7 +88,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
     if ($result === null && $proxy !== null) {
         $jsSeen = false;
         foreach ($attempts as $a) {
-            if (in_array($a['note'], ['challenge', 'js-shell'], true)) {
+            if (in_array($a['note'], ['challenge', 'js-shell', 'empty body'], true)) {
                 $jsSeen = true;
                 break;
             }

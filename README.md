@@ -185,12 +185,12 @@ Env-файлы проектов (`.env.dev.local`, `.env`…) скилл не ч
 4. **proxy** (браузерный UA + полный набор браузерных заголовков) — меняет exit IP:
    гео-блоки и 429 по IP. HTTP-отказ через прокси → смена схемы через прокси.
 5. **chrome** (приём из skills/news-web t-invest-agent): JS-challenge или
-   JS-оболочка (200 с пустым телом) → headless Chrome `--dump-dom`.
+   JS-оболочка или пустое тело при 200 → headless Chrome `--dump-dom`.
    UA chrome обязан совпадать с платформой/версией реального браузера
    (Win/126 против Linux/146 — challenge фингерпринтит несоответствие).
    Авторизованный прокси chrome не умеет — chrome-proxy не пробуем.
 6. **jina reader** (r.jina.ai через прокси): рендерит JS и отдаёт markdown;
-   включается при challenge/js-shell, если chrome не помог или отключён.
+   включается при challenge/js-shell/empty body, если chrome не помог или отключён.
    Работает без ключа; из РФ direct = 451, только прокси.
 7. **feed** (опыт news-core): сайт закрыл HTML, но отдаёт RSS/Atom для
    агрегаторов. Карта известных лент — `WrfClient::FEEDS` (RBC full.rss с полными

@@ -9,7 +9,7 @@
 | eutils.ncbi.nlm.nih.gov | 200 | — | — | |
 | lite.duckduckgo.com/lite/ POST q= | 200 | 200 | — | html.duckduckgo.com/html/ GET — пусто |
 | finam.ru | 403 (research UA); challenge (browser UA, перепроверено 2026-11-25) | challenge | 200 через chrome | WAF меняется: раньше хватало browser UA, теперь нужен chrome |
-| rbc.ru | 200 с пустым телом для ботов | пусто | feed, пока item в топ-30 ленты | пустое тело — отказ, не успех; старые статьи вне ленты и без снапшота недоступны |
+| rbc.ru | 200 с пустым телом для ботов | 200 через chrome | feed, пока item в топ-30 ленты | пустое тело триггерит chrome; `--virtual-time-budget` ломает RBC (0 байт) — не используем |
 | singjupost.com | timeout | read timeout/502 | 200 (2022-12-09, через прокси) | пример полного перебора способов |
 | scribd.com | JS-challenge | JS-challenge | пробовать | не вышло — «не проверено» |
 | archive.ph / archive.today | 000 | 000 | — | из РФ недоступен оба способа (2026-11-25); в перебор не добавлен |
