@@ -58,8 +58,8 @@ php scripts/fetch.php https://example.com/ --proxy http://user:pass@host:port
 # Только direct+прокси, без архива
 php scripts/fetch.php https://example.com/ --no-wayback
 
-# Закрытая от ботов статья: тело в дефолтный /tmp-файл, отчёт читает агент
-php scripts/fetch.php https://www.rbc.ru/rbcfreenews/6b067c5c4a4bff1cbe0b2a6a
+# Закрытая статья: тело в дефолтный /tmp-файл, отчёт читает агент
+php scripts/fetch.php https://www.finam.ru/publications/item/dolya-fizlits-v-birzhevykh-torgakh-aktsiyami-v-oktyabre-sostavila-69-20251110-2119/
 ```
 
 #### Результат

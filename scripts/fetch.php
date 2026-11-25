@@ -29,7 +29,7 @@ $try = function (string $method, string $u, bool $useProxy = false, string $ua =
     $r = $chrome ? WrfClient::chromeFetch($u, $useProxy ? $proxy : null, ($t ?? $timeout) * 1000) : WrfClient::fetch($u, $useProxy ? $proxy : null, $ua, $t ?? $timeout, null, $h);
     $challenge = WrfClient::isChallenge($r['body']);
     $shell = WrfClient::isJsShell($r['body']);
-    $attempts[] = ['method' => $method, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : $r['note'])];
+    $attempts[] = ['method' => $method, 'status' => $r['status'], 'note' => $challenge ? 'challenge' : ($shell ? 'js-shell' : ($r['status'] === 200 && $r['body'] === '' ? 'empty body' : $r['note']))];
     if ($result === null && $r['status'] === 200 && $r['body'] !== '' && !$challenge && !$shell) {
         $result = ['method' => $method, 'status' => 200, 'bytes' => strlen($r['body']), 'body' => $r['body'], 'url' => $r['url']];
     }
@@ -81,7 +81,7 @@ if (!$try('direct', $url, false, WrfClient::UA, null)) {
         if ($needChrome) {
             // Chrome не умеет авторизованный прокси (--proxy-server без credentials),
             // поэтому chrome-proxy не пробуем.
-            $try('chrome', $url, false, WrfClient::CHROME_UA, null, null, [], true);
+            $try('chrome', $url, false, WrfClient::CHROME_UA, null, [], true);
         }
     }
     // Jina reader (r.jina.ai): рендерит JS, отдаёт markdown; из РФ только прокси.
