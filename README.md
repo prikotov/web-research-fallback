@@ -77,8 +77,7 @@ ln -s /path/to/web-research-fallback /path/to/shared/skills/web-research-fallbac
 
 ## Использование
 
-Команды ниже — из корня репо скилла. Из корня рабочего проекта после установки
-путь к скриптам будет `.agents/skills/web-research-fallback/scripts/`.
+Команды ниже — от каталога с SKILL.md.
 
 ### fetch.php — загрузка содержимого
 
